@@ -52,8 +52,7 @@ LOG.addHandler(LOGSTREAM)
 
 def patch_images(bigiq_image_dir, bigiq_cloudinit_dir,
                  bigiq_usr_inject_dir, bigiq_var_inject_dir,
-                 bigiq_config_inject_dir, bigiq_shared_inject_dir,
-                 bigiq_icontrollx_dir):
+                 bigiq_config_inject_dir, bigiq_shared_inject_dir):
     """Patch BIGIQ classic disk image"""
     if bigiq_image_dir and os.path.exists(bigiq_image_dir):
         for disk_image in scan_for_images(bigiq_image_dir):
