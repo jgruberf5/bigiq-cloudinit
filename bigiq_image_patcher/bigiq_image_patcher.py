@@ -17,7 +17,7 @@
 # limitations under the License.
 #
 """
-This module contains the logic to injet files into TMOS classic
+This module contains the logic to injet files into BIGIQ classic
 disk images using guestfs tools.
 """
 
@@ -54,12 +54,12 @@ def patch_images(bigiq_image_dir, bigiq_cloudinit_dir,
                  bigiq_usr_inject_dir, bigiq_var_inject_dir,
                  bigiq_config_inject_dir, bigiq_shared_inject_dir,
                  bigiq_icontrollx_dir):
-    """Patch TMOS classic disk image"""
+    """Patch BIGIQ classic disk image"""
     if bigiq_image_dir and os.path.exists(bigiq_image_dir):
         for disk_image in scan_for_images(bigiq_image_dir):
-            (is_tmos, config_dev, usr_dev, var_dev, shared_dev) = \
+            (is_bigiq, config_dev, usr_dev, var_dev, shared_dev) = \
                 validate_bigiq_device(disk_image)
-            if is_tmos:
+            if is_bigiq:
                 if usr_dev and bigiq_cloudinit_dir:
                     update_cloudinit = os.getenv(
                         'UPDATE_CLOUDINIT', default="true")
@@ -211,7 +211,7 @@ def wait_for_gfs(gfs_handle):
 
 
 def validate_bigiq_device(disk_image):
-    """Validate disk image has TMOS volumes"""
+    """Validate disk image has BIGIQ volumes"""
     gfs = guestfs.GuestFS(python_return_dict=True)
     gfs.add_drive_opts(disk_image)
     gfs.launch()
@@ -253,7 +253,7 @@ def update_cloudinit_modules(bigiq_cloudinit_dir):
 
 
 def inject_cloudinit_modules(disk_image, bigiq_cloudinit_dir, dev):
-    """Inject cloudinit modules into TMOS disk image"""
+    """Inject cloudinit modules into BIGIQ disk image"""
     gfs = guestfs.GuestFS(python_return_dict=True)
     gfs.add_drive_opts(disk_image)
     gfs.launch()
@@ -280,7 +280,7 @@ def inject_cloudinit_modules(disk_image, bigiq_cloudinit_dir, dev):
 
 
 def inject_usr_files(disk_image, usr_dir, dev):
-    """Patch /usr file system of a TMOS disk image"""
+    """Patch /usr file system of a BIGIQ disk image"""
     LOG.debug('injecting files into /usr')
     gfs = guestfs.GuestFS(python_return_dict=True)
     gfs.add_drive_opts(disk_image)
@@ -303,7 +303,7 @@ def inject_usr_files(disk_image, usr_dir, dev):
 
 
 def inject_var_files(disk_image, var_dir, dev):
-    """Patch /var file system of a TMOS disk image"""
+    """Patch /var file system of a BIGIQ disk image"""
     LOG.debug('injecting files into /var')
     gfs = guestfs.GuestFS(python_return_dict=True)
     gfs.add_drive_opts(disk_image)
@@ -326,7 +326,7 @@ def inject_var_files(disk_image, var_dir, dev):
 
 
 def inject_shared_files(disk_image, shared_dir, dev):
-    """Patch /shared file system of a TMOS disk image"""
+    """Patch /shared file system of a BIGIQ disk image"""
     LOG.debug('injecting files into /shared')
     gfs = guestfs.GuestFS(python_return_dict=True)
     gfs.add_drive_opts(disk_image)
@@ -349,7 +349,7 @@ def inject_shared_files(disk_image, shared_dir, dev):
 
 
 def inject_config_files(disk_image, config_dir, dev):
-    """Patch /config file system of a TMOS disk image"""
+    """Patch /config file system of a BIGIQ disk image"""
     LOG.debug('injecting files into /config')
     gfs = guestfs.GuestFS(python_return_dict=True)
     gfs.add_drive_opts(disk_image)
@@ -393,15 +393,15 @@ if __name__ == "__main__":
     if BIGIQ_IMAGE_DIR:
         LOG.info("Scanning for images in: %s", BIGIQ_IMAGE_DIR)
     if BIGIQ_CLOUDINIT_DIR:
-        LOG.info("TMOS cloudinit modules sourced from: %s", BIGIQ_CLOUDINIT_DIR)
+        LOG.info("BIGIQ cloudinit modules sourced from: %s", BIGIQ_CLOUDINIT_DIR)
     if BIGIQ_USR_INJECT_DIR:
-        LOG.info("Patching TMOS /usr file system from: %s", BIGIQ_USR_INJECT_DIR)
+        LOG.info("Patching BIGIQ /usr file system from: %s", BIGIQ_USR_INJECT_DIR)
     if BIGIQ_VAR_INJECT_DIR:
-        LOG.info("Patching TMOS /var file system from: %s", BIGIQ_VAR_INJECT_DIR)
+        LOG.info("Patching BIGIQ /var file system from: %s", BIGIQ_VAR_INJECT_DIR)
     if BIGIQ_SHARED_INJECT_DIR:
-        LOG.info("Patching TMOS /shared file system from: %s", BIGIQ_SHARED_INJECT_DIR)
+        LOG.info("Patching BIGIQ /shared file system from: %s", BIGIQ_SHARED_INJECT_DIR)
     if BIGIQ_CONFIG_INJECT_DIR:
-        LOG.info("Patching TMOS /config file system from: %s",
+        LOG.info("Patching BIGIQ /config file system from: %s",
                  BIGIQ_CONFIG_INJECT_DIR)
     patch_images(BIGIQ_IMAGE_DIR, BIGIQ_CLOUDINIT_DIR,
                  BIGIQ_USR_INJECT_DIR, BIGIQ_VAR_INJECT_DIR,
