@@ -28,7 +28,7 @@ ENV LIBGUESTFS_BACKEND=direct
 VOLUME ["/BIGIQImages", "/BIGIQ_usr", "/BIGIQ_config"]
 
 ENV BIGIQ_IMAGE_DIR '/BIGIQImages'
-ENV BIGIQ_CONFIG_INJECT_DIR '/bigiq-cloudinit/image_path_files/config'
+ENV BIGIQ_CONFIG_INJECT_DIR '/bigiq-cloudinit/image_patch_files/config'
 ENV USER 'root'
 ENV UPDATE_CLOUDINIT 'true'
 
