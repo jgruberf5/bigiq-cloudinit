@@ -12,4 +12,4 @@
 
 # Updated by bigiq-cloudinit
 
-/usr/local/bin/python2.7 -m cloudinit.bigiq_onboard_utils
+/usr/local/bin/python2.7 -m cloudinit.bigiq_onboard_utils &
