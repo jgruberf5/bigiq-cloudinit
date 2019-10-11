@@ -6,8 +6,8 @@
     validate_certs: no
   register: status
   until: status is success and status.json.available|bool
-  retries: 10
-  delay: 6
+  retries: 60
+  delay: 10
 
 - include_tasks: license.yml
   when: license_key|default(False)
