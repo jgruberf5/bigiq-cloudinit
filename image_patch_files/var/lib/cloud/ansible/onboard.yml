@@ -3,7 +3,7 @@
 - hosts: localhost
   name: BIG-IQ Local Onboarding
   tasks:
-    - include vars:
+    - include_vars:
         file: /var/lib/cloud/bigiq_ansible_onboard.yml
     - include_role:
         name: onboard

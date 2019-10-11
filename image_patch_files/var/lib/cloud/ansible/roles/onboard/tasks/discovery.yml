@@ -36,9 +36,6 @@
 
 ############ from here when Discovery IP is defined
 
-- include_tasks: setup-network.yaml
-  when: bigiq_onboard_discovery_address != provider.server
-
 - name: Set discovery address to self-ip
   uri:
     url: "http://localhost:8100/mgmt/shared/system/easy-setup"

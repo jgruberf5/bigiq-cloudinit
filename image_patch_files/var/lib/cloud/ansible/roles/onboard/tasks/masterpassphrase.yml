@@ -10,8 +10,8 @@
   register: mk
 
 - name: Generate Masterkey
-  var:
-    master_passphrase: "{{ lookup('password', '/tmp/passwordfile chars=ascii_letters,digits,punctuation', length=48) }}"
+  set_fact:
+    master_passphrase: "{{ lookup('password', '/tmp/passwordfile chars=ascii_letters,digits,punctuation length=64') }}"
 
 - name: Set master passphrase
   uri:

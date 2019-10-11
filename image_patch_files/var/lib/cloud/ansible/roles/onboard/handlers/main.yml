@@ -1,0 +1,30 @@
+---
+
+- name: Reboot device
+  uri:
+    url: "http://localhost:8100/mgmt/shared/failover-state"
+    method: PATCH
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+    body:
+      restart: true
+    body_format: json
+  listen: Restart device
+
+- name: Wait for device to go offline
+  pause:
+    seconds: 30
+  listen: Restart device
+
+- name: Wait for BIG-IQ to be available
+  uri:
+    url: "https://localhost:443/info/system"
+    timeout: 300
+    validate_certs: no
+  register: status
+  until: status is success and status.json.available|bool
+  retries: 60
+  delay: 5
+  listen: Restart device
