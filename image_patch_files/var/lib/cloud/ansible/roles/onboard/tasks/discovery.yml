@@ -1,0 +1,56 @@
+---
+- name: Get management address details
+  uri:
+    url: "http://localhost:8100/mgmt/shared/system/easy-setup"
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+  register: ez
+
+- name: Set discovery address
+  uri:
+    url: "http://localhost:8100/mgmt/shared/identified-devices/config/discovery"
+    method: PUT
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+    body:
+      discoveryAddress: "{{ device_discovery_address }}"
+    body_format: json
+  when: ez.json.managementIpAddress[:-3] == device_discovery_address
+
+- name: Check discovery address is correct
+  uri:
+    url: "http://localhost:8100/mgmt/shared/identified-devices/config/discovery"
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+  register: result
+  until: device_discovery_address == result.json.discoveryAddress
+  retries: 5
+  delay: 3
+  when: ez.json.managementIpAddress[:-3] == device_discovery_address
+
+############ from here when Discovery IP is defined
+
+- include_tasks: setup-network.yaml
+  when: bigiq_onboard_discovery_address != provider.server
+
+- name: Set discovery address to self-ip
+  uri:
+    url: "http://localhost:8100/mgmt/shared/system/easy-setup"
+    method: PATCH
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+    body:
+      selfIpAddresses:
+        - address: "{{ device_discovery_address }}"
+          vlan: discovery
+          iface: "{{ device_discovery_interface }}"
+    body_format: json
+  when: ez.json.managementIpAddress[:-3] != device_discovery_address

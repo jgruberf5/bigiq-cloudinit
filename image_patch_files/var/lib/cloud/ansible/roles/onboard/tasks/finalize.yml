@@ -1,0 +1,13 @@
+---
+
+- name: Mark that system is setup
+  uri:
+    url: "http://localhost:8100/mgmt/shared/system/setup"
+    method: PATCH
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+    body:
+      isSystemSetup: true
+    body_format: json

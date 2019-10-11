@@ -1,0 +1,14 @@
+---
+
+- name: Provision type on device
+  uri:
+    url: "http://localhost:8100/mgmt/cm/system/provisioning"
+    method: POST
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+    body:
+      systemPersonality: logging_node
+    body_format: json
+  when: node_type == 'dcd'

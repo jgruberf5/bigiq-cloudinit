@@ -1,0 +1,87 @@
+---
+
+- name: Verify license is provided
+  fail:
+    msg: "You must provide a license via license_key"
+  when: license_key is not defined
+
+- name: Request to license device
+  uri:
+    url: "http://localhost:8100/mgmt/tm/shared/licensing/activation"
+    method: POST
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+    body:
+      baseRegKey: "{{ license_key }}"
+      addOnKeys: []
+      activationMethod: AUTOMATIC
+    body_format: json
+
+- name: Request license status
+  uri:
+    url: "http://localhost:8100/mgmt/tm/shared/licensing/activation"
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+  register: status
+  until: status.json.status in ['LICENSING_COMPLETE', 'LICENSING_FAILED', 'NEED_EULA_ACCEPT']
+  retries: 10
+
+- name: Stop if licensing failed
+  fail:
+    msg: Failed to license the device
+  when: status.json.status == 'LICENSING_FAILED'
+
+- name: Send EULA if requested
+  uri:
+    url: "http://localhost:8100/mgmt/tm/shared/licensing/activation"
+    method: POST
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+    body:
+      baseRegKey: "{{ license_key }}"
+      addOnKeys: []
+      activationMethod: AUTOMATIC
+      eulaText: "{{ status.json.eulaText }}"
+    body_format: json
+  when: status.json.status == 'NEED_EULA_ACCEPT'
+
+- name: Request license status, with EULA
+  uri:
+    url: "http://localhost:8100/mgmt/tm/shared/licensing/activation"
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+  register: status
+  until: status.json.status in ['LICENSING_COMPLETE', 'LICENSING_FAILED']
+  retries: 5
+
+- name: Stop if EULA sending failed
+  fail:
+    msg: Failed to license the device
+  when: status.json.status != 'LICENSING_COMPLETE'
+
+- name: Stop if license text was not generated
+  fail:
+    msg: Failed to generate license text
+  when: status.json.licenseText | length == 0
+
+- name: Put license on device
+  uri:
+    url: "http://localhost:8100/mgmt/tm/shared/licensing/registration"
+    method: PUT
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+    body:
+      licenseText: "{{ status.json.licenseText }}"
+    body_format: json
+
+

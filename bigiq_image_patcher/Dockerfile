@@ -20,6 +20,7 @@ RUN apt-get update && \
     git
 
 ## INJECT_PATCH_INSTRUCTION ##
+RUN pip install wheel
 RUN git clone https://github.com/jgruberf5/bigiq-cloudinit.git
 RUN pip install pycdlib
 
@@ -29,6 +30,7 @@ VOLUME ["/BIGIQImages", "/BIGIQ_usr", "/BIGIQ_config"]
 
 ENV BIGIQ_IMAGE_DIR '/BIGIQImages'
 ENV BIGIQ_CONFIG_INJECT_DIR '/bigiq-cloudinit/image_patch_files/config'
+ENV BIGIQ_VAR_INJECT_DIR '/bigiq-cloudinit/image_patch_files/var'
 ENV USER 'root'
 ENV UPDATE_CLOUDINIT 'true'
 

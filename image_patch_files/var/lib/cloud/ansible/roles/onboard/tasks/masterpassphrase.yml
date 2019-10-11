@@ -1,0 +1,35 @@
+---
+
+- name: Check if master passphrase is set
+  uri:
+    url: "http://localhost:8100/mgmt/cm/shared/secure-storage/masterkey"
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+  register: mk
+
+- name: Generate Masterkey
+  var:
+    master_passphrase: "{{ lookup('password', '/tmp/passwordfile chars=ascii_letters,digits,punctuation', length=48) }}"
+
+- name: Set master passphrase
+  uri:
+    url: "http://localhost:8100/mgmt/cm/shared/secure-storage/masterkey"
+    method: POST
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+    body:
+      passphrase: "{{ master_passphrase }}"
+    body_format: json
+  register: result
+  when: mk.json.isMkSet is not defined or not mk.json.isMkSet|bool
+  notify: Restart device
+  changed_when: result.status == 200
+
+- name: Remove Password File
+  file:
+    path: '/tmp/passwordfile'
+    state: absent

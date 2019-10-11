@@ -1,0 +1,18 @@
+---
+
+- name: Wait for BIG-IQ to be available
+  uri:
+    url: "https://localhost:443/info/system"
+    validate_certs: no
+  register: status
+  until: status is success and status.json.available|bool
+  retries: 10
+  delay: 6
+
+- include_tasks: license.yml
+  when: license_key|default(False)
+
+- include_tasks: nodetype.yml
+- include_tasks: discovery.yml
+- include_tasks: masterpassphrase.yml
+- include_tasks: finalize.yml
