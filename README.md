@@ -223,6 +223,8 @@ This module creates initialization scripts containing `tmsh` commands to fulfil 
 | default_route_interface | none | Explicitly define the TMM interface to use for the default route. If unspecified, one will be determined automatically |
 | dhcp_timeout | 120 | Seconds to wait for a DHCP response when using DHCP for resource discovery |
 | inject_routes | true | Creates static routes from discovered route resources |
+| license_key | None | Will auto license the BIG-IQ - requires Internet connection |
+| node_type | None | Can define the BIG-IQ as either 'cm' or 'dcd' |
 | post_onboard_enabled | false | Enable the attempt to run a list of commands after onboarding completes |
 | post_onboard_commands | list | List of CLI commands to run in order. Execution will halt at the point a CLI command fails. |
 | phone_home_url | url | Reachable URL to report completion of this modules onboarding. |
@@ -242,6 +244,8 @@ bigiq_configdrive_openstack:
   default_route_interface: 1.3
   dhcp_timeout: 120
   inject_routes: true
+  license_key: QDLSY-UKPYSP-PCG-GVYMYGH-BZPZMUR
+  node_type: cm
   post_onboard_enabled: false
   phone_home_url: https://webhook.site/5f8cd8a7-b051-4648-9296-8f6afad34c93
   phone_home_cli: "curl -i -X POST -H 'X-Auth-Token: gAAAAABc5UscwS1py5XfC3yPcyN8KcgD7hYtEZ2-xHw95o4YIh0j5IDjAu9qId3JgMOp9hnHwP42mYA7oPPP0yl-OQXvCaCS3OezKlO7MsS-ZCTJzuS3sSysIMHTA78fGsXbMgCQZCi5G-evLG9xUNrYp5d3blhMnpHR0dlHPz6VMacNkPhyrQI' -H 'Content-Type: application/json' -H 'Accept: application/json' http://192.168.0.121:8004/v1/d3779c949b57403bb7f703016e91a425/stacks/demo_waf/3dd6ce45-bb8c-400d-a48c-87ac9e46e60e/resources/wait_handle/signal"
@@ -271,6 +275,8 @@ This module creates initialization scripts containing TMOS `tmsh` commands to fu
 | default_route_interface | none | Explicitly define the TMM interface to use for the default route. Otherwise one will be determined automatically |
 | dhcp_timeout | 120 | Seconds to wait for a DHCP response when using DHCP for resource discovery |
 | inject_routes | true | Creates static routes from discovered route resources |
+| license_key | None | Will auto license the BIG-IQ - requires Internet connection |
+| node_type | None | Can define the BIG-IQ as either 'cm' or 'dcd' |
 | post_onboard_enabled | false | Enable the attempt to run a list of commands after onboarding completes |
 | post_onboard_commands | list | List of CLI commands to run in order. Execution will halt at the point a CLI command fails. |
 | phone_home_url | url | Reachable URL to report completion of this modules onboarding. |
@@ -288,6 +294,8 @@ bigiq_dhcpv4_tmm:
   default_route_interface: 1.3
   dhcp_timeout: 120
   inject_routes: true
+  license_key: QDLSY-UKPYSP-PCG-GVYMYGH-BZPZMUR
+  node_type: cm
   post_onboard_enabled: true
   post_onboard_commands:
     - tmsh save sys config
