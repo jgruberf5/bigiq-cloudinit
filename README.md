@@ -39,18 +39,18 @@ Patched images can then be built by running a `bigiq_image_builder` docker conta
 The `bigiq_image_builder` container uses open source tools to:
 
 - decompress the downloaded BIG-IQ image archive for all archives found in the `/BIGIQImages` volume mount (see mounts below) directory
-- bind the TMOS disk image partitions
+- bind the BIG-IQ disk image partitions
 - mount the logical volumes for `/config`, `/usr`, `/var`, and `/shared` from the bound BIG-IQ file systems
 - copies files specified in the `image_path_files` file directory structure into the BIG-IQ image
 - creates a distribution archive ready for upload to your virtualization image storage services
 
 When you run the `bigiq_image_patcher` container from this repository's root directory, it will find the `image_path_files` directory structure and patch your images with the files found within. This repository's `image_path_files` directory structure is designed to inject all three of `bigiq-cloudinit` modules and patch the `/config/startup` configuration file to load the `bigiq-cloudinit` modules properly when BIG-IQ boots.
 
-The open source tools used in the container are all user space utilities, thus the container requires no special privileges other then write access to the directory where your downloaded TMOS disk archives are mounted (`/BIGIQImages` see below).
+The open source tools used in the container are all user space utilities, thus the container requires no special privileges other then write access to the directory where your downloaded BIG-IQ disk archives are mounted (`/BIGIQImages` see below).
 
 #### Expected Docker Volume Mounts for the `tmos_image_builder` Container ####
 
-The docker container uses the mount points listed below. Your TMOS image archives folder should be mounted as a volume to the container's `/BIGIQImages` directory. 
+The docker container uses the mount points listed below. Your BIG-IQ image archives folder should be mounted as a volume to the container's `/BIGIQImages` directory. 
 
 | Docker Volume Mount | Required | Description |
 | --------------------- | ----- | ---------- |
@@ -251,7 +251,7 @@ bigiq_configdrive_openstack:
   phone_home_cli: "curl -i -X POST -H 'X-Auth-Token: gAAAAABc5UscwS1py5XfC3yPcyN8KcgD7hYtEZ2-xHw95o4YIh0j5IDjAu9qId3JgMOp9hnHwP42mYA7oPPP0yl-OQXvCaCS3OezKlO7MsS-ZCTJzuS3sSysIMHTA78fGsXbMgCQZCi5G-evLG9xUNrYp5d3blhMnpHR0dlHPz6VMacNkPhyrQI' -H 'Content-Type: application/json' -H 'Accept: application/json' http://192.168.0.121:8004/v1/d3779c949b57403bb7f703016e91a425/stacks/demo_waf/3dd6ce45-bb8c-400d-a48c-87ac9e46e60e/resources/wait_handle/signal"
 ```
 
-In addition to the declared elements, this module also supports `cloud-config` declarations for `ssh_authorized_keys`. Any declared keys will be authorized for the TMOS root account.
+In addition to the declared elements, this module also supports `cloud-config` declarations for `ssh_authorized_keys`. Any declared keys will be authorized for the BIG-IQ root account.
 
 ```
 #cloud-config
@@ -265,7 +265,7 @@ This cloudinit module resolves configuration data for all interfaces (management
 
 There are implicit declarations of the TMM inteface names to use for the data plane default route and the device discovery interfaces. If these declarations are omitted, the module will attempt to assign them dynamically based on available network configuration data.
 
-This module creates initialization scripts containing TMOS `tmsh` commands to fulfil the specified configurations. The generated initialization scripts are created in the `/opt/cloud/bigiq_dhcpv4_tmm` directory on the device.
+This module creates initialization scripts containing BIG-IQ `tmsh` commands to fulfil the specified configurations. The generated initialization scripts are created in the `/opt/cloud/bigiq_dhcpv4_tmm` directory on the device.
 
 | Module Attribute | Default | Description|
 | --------------------- | -----------| ---------------|
@@ -303,7 +303,7 @@ bigiq_dhcpv4_tmm:
   phone_home_cli: "curl -i -X POST -H 'X-Auth-Token: gAAAAABc5UscwS1py5XfC3yPcyN8KcgD7hYtEZ2-xHw95o4YIh0j5IDjAu9qId3JgMOp9hnHwP42mYA7oPPP0yl-OQXvCaCS3OezKlO7MsS-ZCTJzuS3sSysIMHTA78fGsXbMgCQZCi5G-evLG9xUNrYp5d3blhMnpHR0dlHPz6VMacNkPhyrQI' -H 'Content-Type: application/json' -H 'Accept: application/json' http://192.168.0.121:8004/v1/d3779c949b57403bb7f703016e91a425/stacks/demo_waf/3dd6ce45-bb8c-400d-a48c-87ac9e46e60e/resources/wait_handle/signal"
 ```
 
-In addition to the declared elements, this module also supports `cloud-config` declarations for `ssh_authorized_keys`. Any declared keys will be authorized for the TMOS root account.
+In addition to the declared elements, this module also supports `cloud-config` declarations for `ssh_authorized_keys`. Any declared keys will be authorized for the BIG-IQ root account.
 
 ```
 #cloud-config
@@ -311,9 +311,9 @@ ssh_authorized_keys:
   - ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAGEA3FSyQwBI6Z+nCSjUUk8EEAnnkhXlukKoUPND/RRClWz2s5TCzIkd3Ou5+Cyz71X0XmazM3l5WgeErvtIwQMyT1KjNoMhoJMrJnWqQPOt5Q8zWd9qG7PBl9+eiH5qV7NZ mykey@host
 ```
 
-# TMOS Cloudinit Modules Support for SSH Keys and Passwords #
+# BIG-IQ Cloudinit Modules Support for SSH Keys and Passwords #
 
-In addition to the declared elements, these modules also support `cloud-config` declarations for `ssh_authorized_keys` using the standard cloudinit `cloud-config` declaration syntax. Any declared keys will be authorized for the TMOS root account.
+In addition to the declared elements, these modules also support `cloud-config` declarations for `ssh_authorized_keys` using the standard cloudinit `cloud-config` declaration syntax. Any declared keys will be authorized for the BIG-IQ root account.
 
 ### additional userdata ###
 
@@ -325,7 +325,7 @@ ssh_authorized_keys:
 
 ### Support Cloudinit set-password ###
 
-The patched VE image cloudinit configurations template has been altered to support the standard cloudinit `set_password` module as well. You can change the built-in TMOS `admin` and  `root` passwords using the following cloudinit `cloud-config` declarations.
+The patched VE image cloudinit configurations template has been altered to support the standard cloudinit `set_password` module as well. You can change the built-in BIG-IQ `admin` and  `root` passwords using the following cloudinit `cloud-config` declarations.
 
 ```
 #cloud-config
