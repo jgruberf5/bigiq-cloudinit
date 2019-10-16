@@ -1,0 +1,27 @@
+---
+
+- name: Check license pool name defined
+  fail:
+    msg: "You must provide a pool name via license_pool_name"
+  when: license_pool_name is not defined
+
+- name: Create RegKey license pool
+  uri:
+    url: "http://localhost:8100/mgmt/cm/device/licensing/pool/regkey/licenses"
+    method: POST
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+    body:
+      name: "{{ license_pool_name }}"
+      description: "Onboard declared license pool"
+    body_format: json
+  register: create_pool
+
+- name: Add RegKey offers to RegKey pool
+  include_tasks: licenseoffer.yml
+  loop: license_offerings  
+  when: 
+    - create_pool.json.id is defined
+    - license_offerings is defined

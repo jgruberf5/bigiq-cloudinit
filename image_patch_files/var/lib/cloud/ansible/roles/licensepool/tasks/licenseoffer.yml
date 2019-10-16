@@ -1,0 +1,73 @@
+---
+
+- name: Verify license offering is provided
+  fail:
+    msg: "You must provide a list of licenses to offer via license_offerings"
+  when: item is not defined
+
+- name: Add License to Pool 
+  uri:
+    url: "http://localhost:8100/mgmt/cm/device/licensing/pool/regkey/licenses/{{ create_pool.json.id }}/offerings"
+    method: POST
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+    body:
+      regKey: "{{ item }}"
+      status: ACTIVATING_AUTOMATIC
+    body_format: json
+
+- name: Request license status
+  uri:
+    url: "http://localhost:8100/mgmt/cm/device/licensing/pool/regkey/licenses/{{ create_pool.json.id }}/offerings/{{ item }}"
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+  register: status
+  until: status.json.status in [ACTIVATING_AUTOMATIC_LICENSING_FAILED', 'ACTIVATING_AUTOMATIC_NEED_EULA_ACCEPT']
+  retries: 10
+
+- name: Stop if licensing failed
+  fail:
+    msg: Failed to license the device
+  when: status.json.status == 'ACTIVATING_AUTOMATIC_LICENSING_FAILED'
+
+- name: Send EULA if requested
+  uri:
+    url: "http://localhost:8100/mgmt/cm/device/licensing/pool/regkey/licenses/{{ create_pool.json.id }}/offerings/{{ item }}"
+    method: PATCH
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+    body:
+      regKey: "{{ item }}"
+      addOnKeys: []
+      activationMethod: ACTIVATING_AUTOMATIC
+      eulaText: "{{ status.json.eulaText }}"
+    body_format: json
+  when: status.json.status == 'ACTIVATING_AUTOMATIC_NEED_EULA_ACCEPT'
+
+- name: Request license status, with EULA
+  uri:
+    url: "http://localhost:8100/mgmt/cm/device/licensing/pool/regkey/licenses/{{ create_pool.json.id }}/offerings/{{ item }}"
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+  register: status
+  until: status.json.status in ['ACTIVATING_AUTOMATIC_EULA_ACCEPTED', 'ACTIVATING_AUTOMATIC_LICENSING_FAILED']
+  retries: 5
+
+- name: Stop if EULA sending failed
+  fail:
+    msg: Failed to license the device
+  when: status.json.status != 'ACTIVATING_AUTOMATIC_EULA_ACCEPTED'
+
+- name: Stop if license text was not generated
+  fail:
+    msg: Failed to generate license text
+  when: status.json.licenseText | length == 0
+
