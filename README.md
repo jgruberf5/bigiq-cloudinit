@@ -333,7 +333,6 @@ chpasswd:
   list: |
     root:f5str0ngPa$$word
     admin:f5str0ngPa$$word
-  expire: False
 ```
 
 If the well-known `admin` and `root` BIG-IQ accounts do not have password sets, the accounts will be locked via the BIG-IQ OS. To enable the `admin` or `root` account, SSH into the device, with an injected SSH key, and enable the account:
