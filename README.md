@@ -180,6 +180,8 @@ This modules create initialization scripts containing `tmsh` commands to fulfill
 | nameservers | list | List of DNS server IP addresses. |
 | searchdomain | none | A single search domain to assign. |
 | ntpservers | list | List of NTP server FQDNs or IP addresses. |
+| license_key | None | Will auto license the BIG-IQ - requires Internet connection |
+| node_type | None | Can define the BIG-IQ as either 'cm' or 'dcd' |
 | post_onboard_enabled | false | Enabled the attempt to run a list of commands after onboarding completes. |
 | post_onboard_commands | list | List of CLI commands to run in order. Execution will halt at the point a CLI command fails. |
 | phone_home_url | url | Reachable URL to report completion of this modules onboarding. |
@@ -199,6 +201,8 @@ bigiq_static_mgmt:
   netmask: 255.255.255.0
   gw: 192.168.245.1
   mtu: 1450
+  license_key: QDLSY-UKPYSP-PCG-GVYMYGH-BZPZMUR
+  node_type: cm
   post_onboard_enabled: true
   post_onboard_commands:
     - tmsh save sys config
@@ -310,6 +314,55 @@ In addition to the declared elements, this module also supports `cloud-config` d
 ssh_authorized_keys:
   - ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAGEA3FSyQwBI6Z+nCSjUUk8EEAnnkhXlukKoUPND/RRClWz2s5TCzIkd3Ou5+Cyz71X0XmazM3l5WgeErvtIwQMyT1KjNoMhoJMrJnWqQPOt5Q8zWd9qG7PBl9+eiH5qV7NZ mykey@host
 ```
+
+## The bigiq_playbooks Cloudinit Module ##
+
+BIG-IQ 7.0 and above includes an installation of Ansible. This means onboarding tasks can be accomplished via Ansible playbooks.
+
+In the bigiq-cloudinit modules above, an embedded onboarding playbook is run to license and onboard the target BIGIQ device.
+
+In addition to the embedded onboard playbook, additional playbooks can be injected with image patching. You can do this by including them in the `image_patch_files/var/lib/cloud/ansible` directory from this repository. A sample Ansible playbook named `license_pool` is includes which will add a device RegKey license pool and populate it with RegKey license offers. 
+
+The `bigiq_playbooks` cloudinit module requires your playbook to follow a naming convention. The userdata declaration for our sample `license_pool` playbook looks like the following:
+
+```
+bigiq_playbooks:
+  enabled: True
+  playbooks:
+    - name: license_pool
+      vars:
+        license_pool_name: REGKEYPOOL
+        license_offerings:
+          - XINGV-LNNLH-SARPH-GCTRI-IHCGTJZ
+          - JCLMK-ZDGDW-KTRGU-PAVVY-GHVOAYV
+```
+
+Like all bigiq-cloudinit modules, you must include the `enabled` attribute or the module will simply return without performing any action. 
+
+For the `bigiq_playbooks` cloudinit module, the declaration should include a list of playbooks to run defined with the `playbooks` attribute.
+
+Each playbook declared must have a `name` attritbute and optionally can supply `vars` for your playbook roles. 
+
+From the above declaration, the `bigiq_playbooks` module will:
+
+- attempt to find your playbook in the `/var/lib/cloud/ansible/[name]` directory.
+- the optional `vars` declaration YAML will be copied to `/var/lib/cloud/ansible/[name]/[name]_vars.yml` file.
+- `ansible-playbook` will be called to exectute the `/var/lib/cloud/ansible/[name]/[name].yml playbook.
+
+Playbooks are run in the order defined in the `playbooks` declaration.
+
+For the above example, the `bigiq_playbooks` cloudinit module would write the `vars` attributes to the `/var/lib/cloud/ansible/license_pool/license_pool_vars.yml` file and would attempt to run the playbook found at `/var/lib/cloud/ansible/license_pool/license_pool.yml`. You must inject your playbook, via image patching, to this location or the module will not be able to find your playbook. 
+
+In order for your injected playbook to read the declared `vars` correctly, your playbook would start with a task like the following:
+
+```
+tasks:
+    - include_vars:
+        file: /var/lib/cloud/ansible/license_pool/license_pool_vars.yml
+```
+
+Once included, declared `vars` can be utilized throughout your playbook roles.
+
 
 # BIG-IQ Cloudinit Modules Support for SSH Keys and Passwords #
 
