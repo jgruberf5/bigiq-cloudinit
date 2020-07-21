@@ -26,10 +26,12 @@ import sys
 import tarfile
 import zipfile
 import datetime
+import hashlib
 import time
 import logging
 import subprocess
 import guestfs
+import re
 
 ARCHIVE_EXTS = {'.zip': 'zipfile', '.ova': 'tarfile'}
 IMAGE_TYPES = ['.qcow2', '.vhd', '.vmdk']
