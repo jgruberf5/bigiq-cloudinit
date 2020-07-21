@@ -10,9 +10,8 @@ RUN apt-get update && \
     qemu-utils \
     linux-image-generic \
     virtualbox \
-    python-ipython \
-    python-openstackclient \
     python-guestfs \
+    python-crypto \
     python-jsonschema \
     python-yaml \
     python-pip \
