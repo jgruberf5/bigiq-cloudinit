@@ -50,41 +50,47 @@ LOGSTREAM.setFormatter(FORMATTER)
 LOG.addHandler(LOGSTREAM)
 
 
-def patch_images(bigiq_image_dir, bigiq_cloudinit_dir,
-                 bigiq_usr_inject_dir, bigiq_var_inject_dir,
-                 bigiq_config_inject_dir, bigiq_shared_inject_dir):
+def patch_images(bigiq_image_dir, bigiq_cloudinit_dir, bigiq_usr_inject_dir,
+                 bigiq_var_inject_dir, bigiq_config_inject_dir,
+                 bigiq_shared_inject_dir, private_pem_key_path, image_overwrite):
     """Patch BIGIQ classic disk image"""
     if bigiq_image_dir and os.path.exists(bigiq_image_dir):
-        for disk_image in scan_for_images(bigiq_image_dir):
+        for disk_image in scan_for_images(bigiq_image_dir, image_overwrite):
             (is_bigiq, config_dev, usr_dev, var_dev, shared_dev) = \
                 validate_bigiq_device(disk_image)
             if is_bigiq:
                 if usr_dev and bigiq_cloudinit_dir:
-                    update_cloudinit = os.getenv(
-                        'UPDATE_CLOUDINIT', default="true")
+                    update_cloudinit = os.getenv('UPDATE_CLOUDINIT',
+                                                 default="true")
                     if update_cloudinit == "true":
                         update_cloudinit_modules(bigiq_cloudinit_dir)
-                    inject_cloudinit_modules(
-                        disk_image, bigiq_cloudinit_dir, usr_dev)
+                    inject_cloudinit_modules(disk_image, bigiq_cloudinit_dir,
+                                             usr_dev)
                 if usr_dev and bigiq_usr_inject_dir:
                     inject_usr_files(disk_image, bigiq_usr_inject_dir, usr_dev)
                 if var_dev and bigiq_var_inject_dir:
                     inject_var_files(disk_image, bigiq_var_inject_dir, var_dev)
                 if shared_dev and bigiq_shared_inject_dir:
-                    inject_shared_files(
-                        disk_image, bigiq_shared_inject_dir, shared_dev)
+                    inject_shared_files(disk_image, bigiq_shared_inject_dir,
+                                        shared_dev)
                 if config_dev and bigiq_config_inject_dir:
-                    inject_config_files(
-                        disk_image, bigiq_config_inject_dir, config_dev)
+                    inject_config_files(disk_image, bigiq_config_inject_dir,
+                                        config_dev)
                 if os.path.splitext(disk_image)[1] == '.vmdk':
                     clean_up_vmdk(disk_image)
+            generate_md5sum(disk_image)
+            if private_pem_key_path:
+                try:
+                    sign_image(disk_image, private_pem_key_path)
+                except Exception as ex:
+                    LOG.error("could not sign %s with private key %s: %s", disk_image, private_pem_key_path, ex)
     else:
         print "ERROR: BIGIQ image directory %s does not exist." % bigiq_image_dir
         print "Set environment variable BIGIQ_IMAGE_DIR or supply as the first argument to the script.\n"
         sys.exit(1)
 
 
-def scan_for_images(bigiq_image_dir):
+def scan_for_images(bigiq_image_dir, image_overwrite):
     """Scan for BIGIQ disk images"""
     return_image_files = []
     for image_file in os.listdir(bigiq_image_dir):
@@ -92,7 +98,19 @@ def scan_for_images(bigiq_image_dir):
         if os.path.isfile(filepath):
             extract_dir = "%s/%s" % (bigiq_image_dir,
                                      os.path.splitext(image_file)[0])
-            if not os.path.exists(extract_dir):
+            if os.path.exists(extract_dir):
+                found_sum_files = False
+                for existing_file in os.listdir(extract_dir):
+                    if os.path.splitext(existing_file)[1] == '.md5':
+                        LOG.debug('found previous patching artifact file %s' %
+                                  existing_file)
+                        found_sum_files = True
+                if not image_overwrite and found_sum_files:
+                    LOG.info(
+                        'previous patch artifacts found in %s.. skipping patching.'
+                        % extract_dir)
+                    continue
+            else:
                 os.makedirs(extract_dir)
             arch_ext = os.path.splitext(image_file)[1]
             if arch_ext in ARCHIVE_EXTS:
@@ -134,20 +152,18 @@ def convert_vmdk(image_file, variant):
     LOG.warn('converting VMDK format to %s format', variant)
     os.chdir(convert_dir)
     FNULL = open(os.devnull, 'w')
-    subprocess.call(
-        [
-            VBOXMANAGE_CLI,
-            'clonemedium',
-            '--format',
-            VBOXMANAGE_CLI_FORMAT,
-            '--variant',
-            variant,
-            image_file,
-            'converted.vmdk',
-        ],
-        stdout=FNULL,
-        stderr=subprocess.STDOUT
-    )
+    subprocess.call([
+        VBOXMANAGE_CLI,
+        'clonemedium',
+        '--format',
+        VBOXMANAGE_CLI_FORMAT,
+        '--variant',
+        variant,
+        image_file,
+        'converted.vmdk',
+    ],
+                    stdout=FNULL,
+                    stderr=subprocess.STDOUT)
     subprocess.call(['/bin/mv', '-f', 'converted.vmdk', image_file])
     os.chdir(start_directory)
 
@@ -187,10 +203,10 @@ def clean_ovf(ovf_file_path):
     """Remove OVF references to proprietary image"""
     working_dir = os.path.dirname(ovf_file_path)
     file_name = os.path.basename(ovf_file_path)
-    os.rename(ovf_file_path, os.path.join(
-        working_dir, "%s.backup" % file_name))
-    original_ovf = open(os.path.join(
-        working_dir, "%s.backup" % file_name), 'r')
+    os.rename(ovf_file_path, os.path.join(working_dir,
+                                          "%s.backup" % file_name))
+    original_ovf = open(os.path.join(working_dir, "%s.backup" % file_name),
+                        'r')
     new_ovf = open(ovf_file_path, 'w')
     for line in original_ovf:
         if 'ovf:size' in line:
@@ -202,6 +218,35 @@ def clean_ovf(ovf_file_path):
     original_ovf.close()
     new_ovf.close()
     os.remove(os.path.join(working_dir, "%s.backup" % file_name))
+
+
+def generate_md5sum(disk_image):
+    """Create MD5 sum file for the disk image"""
+    md5_file_path = "%s.md5" % disk_image
+    LOG.info('creating md5sum file for %s as %s', disk_image, md5_file_path)
+    md5_hash = hashlib.md5()
+    with open(disk_image, 'rb') as di:
+        for block in iter(lambda: di.read(4096), b''):
+            md5_hash.update(block)
+        with open(md5_file_path, 'w+') as md5sum:
+            md5sum.write(md5_hash.hexdigest())
+
+
+def sign_image(disk_image, private_key):
+    """Creating SHA384 signature digest for disk image"""
+    sig_file_path = "%s.384.sig" % disk_image
+    LOG.info('signing image %s with private key %s', disk_image, private_key)
+    sha384_hash = SHA384.new()
+    with open(disk_image, 'rb') as di:
+        for block in iter(lambda: di.read(4096), b''):
+            sha384_hash.update(block)
+        pk = False
+        with open(private_key, 'r') as key_file:
+            pk = RSA.importKey(key_file.read())
+        signer = PKCS1_v1_5.new(pk)
+        digest = signer.sign(sha384_hash)
+        with open(sig_file_path, 'w+') as sha384sig:
+            sha384sig.write(digest)
 
 
 def wait_for_gfs(gfs_handle):
@@ -243,10 +288,8 @@ def update_cloudinit_modules(bigiq_cloudinit_dir):
     LOG.info('pulling latest cloudinit modules')
     start_directory = os.getcwd()
     os.chdir(bigiq_cloudinit_dir)
-    gitout = subprocess.Popen(
-        "git pull",
-        stdout=subprocess.PIPE, shell=True
-    ).communicate()[0].split('\n')
+    gitout = subprocess.Popen("git pull", stdout=subprocess.PIPE,
+                              shell=True).communicate()[0].split('\n')
     LOG.info('git returned: %s', gitout)
     os.chdir(start_directory)
 
@@ -334,10 +377,12 @@ def inject_shared_files(disk_image, shared_dir, dev):
     shared_files = []
     for root, dirs, files in os.walk(shared_dir):
         for file_name in files:
-            shared_files.append(os.path.join(root, file_name)[len(shared_dir):])
+            shared_files.append(
+                os.path.join(root, file_name)[len(shared_dir):])
     for shared_file in shared_files:
         local = "%s%s" % (shared_dir, shared_file)
-        LOG.debug('injecting %s to /shared%s', os.path.basename(local), shared_file)
+        LOG.debug('injecting %s to /shared%s', os.path.basename(local),
+                  shared_file)
         mkdir_path = os.path.dirname(shared_file)
         gfs.mkdir_p(mkdir_path)
         gfs.upload(local, shared_file)
@@ -357,12 +402,12 @@ def inject_config_files(disk_image, config_dir, dev):
     config_files = []
     for root, dirs, files in os.walk(config_dir):
         for file_name in files:
-            config_files.append(os.path.join(
-                root, file_name)[len(config_dir):])
+            config_files.append(
+                os.path.join(root, file_name)[len(config_dir):])
     for config_file in config_files:
         local = "%s%s" % (config_dir, config_file)
-        LOG.debug('injecting %s to /config%s',
-                  os.path.basename(local), config_file)
+        LOG.debug('injecting %s to /config%s', os.path.basename(local),
+                  config_file)
         mkdir_path = os.path.dirname(config_file)
         gfs.mkdir_p(mkdir_path)
         gfs.upload(local, config_file)
@@ -377,8 +422,10 @@ if __name__ == "__main__":
         print "Please run this script as sudo"
         sys.exit(1)
     START_TIME = time.time()
-    LOG.debug('process start time: %s', datetime.datetime.fromtimestamp(
-        START_TIME).strftime("%A, %B %d, %Y %I:%M:%S"))
+    LOG.debug(
+        'process start time: %s',
+        datetime.datetime.fromtimestamp(START_TIME).strftime(
+            "%A, %B %d, %Y %I:%M:%S"))
     BIGIQ_IMAGE_DIR = os.getenv('BIGIQ_IMAGE_DIR', None)
     BIGIQ_CLOUDINIT_DIR = os.getenv('BIGIQ_CLOUDINIT_DIR', '/bigiq-cloudinit')
     BIGIQ_USR_INJECT_DIR = os.getenv('BIGIQ_USR_INJECT_DIR', None)
@@ -392,24 +439,35 @@ if __name__ == "__main__":
     if BIGIQ_IMAGE_DIR:
         LOG.info("Scanning for images in: %s", BIGIQ_IMAGE_DIR)
     if BIGIQ_CLOUDINIT_DIR:
-        LOG.info("BIGIQ cloudinit modules sourced from: %s", BIGIQ_CLOUDINIT_DIR)
+        LOG.info("BIGIQ cloudinit modules sourced from: %s",
+                 BIGIQ_CLOUDINIT_DIR)
     if BIGIQ_USR_INJECT_DIR:
-        LOG.info("Patching BIGIQ /usr file system from: %s", BIGIQ_USR_INJECT_DIR)
+        LOG.info("Patching BIGIQ /usr file system from: %s",
+                 BIGIQ_USR_INJECT_DIR)
     if BIGIQ_VAR_INJECT_DIR:
-        LOG.info("Patching BIGIQ /var file system from: %s", BIGIQ_VAR_INJECT_DIR)
+        LOG.info("Patching BIGIQ /var file system from: %s",
+                 BIGIQ_VAR_INJECT_DIR)
     if BIGIQ_SHARED_INJECT_DIR:
-        LOG.info("Patching BIGIQ /shared file system from: %s", BIGIQ_SHARED_INJECT_DIR)
+        LOG.info("Patching BIGIQ /shared file system from: %s",
+                 BIGIQ_SHARED_INJECT_DIR)
     if BIGIQ_CONFIG_INJECT_DIR:
         LOG.info("Patching BIGIQ /config file system from: %s",
                  BIGIQ_CONFIG_INJECT_DIR)
-    patch_images(BIGIQ_IMAGE_DIR, BIGIQ_CLOUDINIT_DIR,
-                 BIGIQ_USR_INJECT_DIR, BIGIQ_VAR_INJECT_DIR,
-                 BIGIQ_CONFIG_INJECT_DIR, BIGIQ_SHARED_INJECT_DIR)
+    PRIVATE_KEY_PATH = None
+    if PRIVATE_PEM_KEY_FILE and os.path.exists("%s/%s" % (PRIVATE_PEM_KEY_DIR, PRIVATE_PEM_KEY_FILE)):
+        PRIVATE_KEY_PATH = "%s/%s" % (PRIVATE_PEM_KEY_DIR, PRIVATE_PEM_KEY_FILE)
+    if IMAGE_OVERWRITE == "1" or IMAGE_OVERWRITE.lower(
+    ) == 'yes' or IMAGE_OVERWRITE.lower() == 'true':
+        IMAGE_OVERWRITE = True
+        LOG.info('force overwrite of existing patch file artifacts')
+    else:
+        IMAGE_OVERWRITE = False
+    patch_images(BIGIQ_IMAGE_DIR, BIGIQ_CLOUDINIT_DIR, BIGIQ_USR_INJECT_DIR,
+                 BIGIQ_VAR_INJECT_DIR, BIGIQ_CONFIG_INJECT_DIR,
+                 BIGIQ_SHARED_INJECT_DIR, PRIVATE_KEY_PATH, IMAGE_OVERWRITE)
     STOP_TIME = time.time()
     DURATION = STOP_TIME - START_TIME
     LOG.debug(
         'process end time: %s - ran %s (seconds)',
-        datetime.datetime.fromtimestamp(
-            STOP_TIME).strftime("%A, %B %d, %Y %I:%M:%S"),
-        DURATION
-    )
+        datetime.datetime.fromtimestamp(STOP_TIME).strftime(
+            "%A, %B %d, %Y %I:%M:%S"), DURATION)
