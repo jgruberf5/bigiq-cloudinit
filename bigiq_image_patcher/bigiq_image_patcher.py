@@ -432,6 +432,9 @@ if __name__ == "__main__":
     BIGIQ_VAR_INJECT_DIR = os.getenv('BIGIQ_VAR_INJECT_DIR', None)
     BIGIQ_SHARED_INJECT_DIR = os.getenv('BIGIQ_SHARED_INJECT_DIR', None)
     BIGIQ_CONFIG_INJECT_DIR = os.getenv('BIGIQ_CONFIG_INJECT_DIR', None)
+    PRIVATE_PEM_KEY_DIR = os.getenv('PRIVATE_PEM_KEY_PATH', '/keys')
+    PRIVATE_PEM_KEY_FILE = os.getenv('PRIVATE_PEM_KEY_FILE', None)
+    IMAGE_OVERWRITE = os.getenv('IMAGE_OVERWRITE', '0')
     if len(sys.argv) > 1:
         BIGIQ_IMAGE_DIR = sys.argv[1]
     if len(sys.argv) > 2:
