@@ -1,0 +1,32 @@
+---
+- name: Get management address details
+  uri:
+    url: "http://localhost:8100/mgmt/setup/address"
+    timeout: 300
+    headers:
+      X-F5-Auth-Token: "{{ f5_auth_token }}"
+  register: ez
+
+- name: Set discovery address
+  uri:
+    url: "http://localhost:8100/mgmt/setup/address"
+    method: POST
+    timeout: 300
+    headers:
+      X-F5-Auth-Token: "{{ f5_auth_token }}"
+    body:
+      discoveryAddress: "{{ device_discovery_address }}"
+    body_format: json
+  when: ez.json.discoveryAddress != device_discovery_address
+
+- name: Check discovery address is correct
+  uri:
+    url: "http://localhost:8100/mgmt/setup/address"
+    timeout: 300
+    headers:
+      X-F5-Auth-Token: "{{ f5_auth_token }}"
+  register: result
+  until: device_discovery_address == result.json.discoveryAddress
+  retries: 5
+  delay: 3
+  when: ez.json.discoveryAddress != device_discovery_address

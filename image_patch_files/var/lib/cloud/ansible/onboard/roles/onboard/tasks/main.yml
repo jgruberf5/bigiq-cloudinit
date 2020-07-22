@@ -1,5 +1,4 @@
 ---
-
 - name: Wait for BIG-IQ to be available
   uri:
     url: "https://localhost:443/info/system"
@@ -9,10 +8,59 @@
   retries: 60
   delay: 10
 
+- name: Create Random Password
+  set_fact:
+    onboard_password: "{{ lookup('password', '/dev/null length=15 chars=ascii_letters') }}"
+  when: (status.json["build"] is defined)
+
+- name: Create TMOS user
+  shell: "/usr/bin/tmsh create auth user onboard password {{ onboard_password }} partition-access replace-all-with { all-partitions { role admin } }"
+  register: tmos_user_create
+  when: (status.json["build"] is defined)
+
+- name: Get authentication token
+  uri:
+    url: "http://localhost:8100/mgmt/shared/authn/login"
+    method: POST
+    timeout: 10
+    body:
+      username: "onboard"
+      password: "{{ onboard_password }}"
+    body_format: json
+  register: authtoken
+  when: (status.json["build"] is defined) and tmos_user_create is success
+
+- name: Set the token fact if authentication succeeded
+  set_fact:
+    f5_auth_token: "{{ authtoken.json.token.token }}"
+  when: (status.json["build"] is defined) and authtoken is success
+
 - include_tasks: license.yml
-  when: license_key|default(False)
+  when: (status.json["build"] is not defined and license_key|default(False))
+- include_tasks: license_7_1_plus.yml
+  when: (status.json["build"] is defined) and license_key|default(False) and authtoken is success
 
 - include_tasks: nodetype.yml
+  when: (status.json["build"] is not defined)
+- include_tasks: nodetype_7_1_plus.yml
+  when: (status.json["build"] is defined) and authtoken is success
+
 - include_tasks: discovery.yml
+  when: (status.json["build"] is not defined)
+- include_tasks: discovery_7_1_plus.yml
+  when: (status.json["build"] is defined) and authtoken is success
+
 - include_tasks: masterpassphrase.yml
+  when: (status.json["build"] is not defined)
+- include_tasks: masterpassphrase_7_1_plus.yml
+  when: (status.json["build"] is defined) and authtoken is success
+
 - include_tasks: finalize.yml
+  when: (status.json["build"] is not defined)
+- include_tasks: finalize_7_1_plus.yml
+  when: (status.json["build"] is defined) and authtoken is success
+
+- name: Delete TMOS user
+  shell: "/usr/bin/tmsh delete auth user onboard"
+  register: tmos_user_delete
+  when: (status.json["build"] is defined)

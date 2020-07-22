@@ -1,0 +1,27 @@
+---
+- name: Check if master passphrase is set
+  uri:
+    url: "http://localhost:8100/mgmt/setup/masterkey"
+    timeout: 300
+    headers:
+      X-F5-Auth-Token: "{{ f5_auth_token }}"
+  register: mk
+
+- name: Create Master Passphrase
+  set_fact:
+    master_passphrase: "{{ lookup('password', '/dev/null chars=ascii_letters,digits,punctuation length=64') }}"
+  when: mk.json.isMkSet is not defined or not mk.json.isMkSet|bool
+
+- name: Set master passphrase
+  uri:
+    url: "http://localhost:8100/mgmt/setup/masterkey"
+    method: POST
+    timeout: 300
+    headers:
+      X-F5-Auth-Token: "{{ f5_auth_token }}"
+    body:
+      passphrase: "{{ master_passphrase }}"
+    body_format: json
+  register: result
+  when: mk.json.isMkSet is not defined or not mk.json.isMkSet|bool
+  changed_when: result.status == 200
