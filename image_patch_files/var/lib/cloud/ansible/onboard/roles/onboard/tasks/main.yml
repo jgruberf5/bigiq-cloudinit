@@ -37,8 +37,6 @@
 
 - include_tasks: license.yml
   when: (status.json["build"] is not defined and license_key|default(False))
-- include_tasks: license_7_1_plus.yml
-  when: (status.json["build"] is defined) and license_key|default(False) and authtoken is success
 
 - include_tasks: nodetype.yml
   when: (status.json["build"] is not defined)
@@ -64,3 +62,6 @@
   shell: "/usr/bin/tmsh delete auth user onboard"
   register: tmos_user_delete
   when: (status.json["build"] is defined)
+
+- include_tasks: license_7_1_plus.yml
+  when: (status.json["build"] is defined) and license_key|default(False)

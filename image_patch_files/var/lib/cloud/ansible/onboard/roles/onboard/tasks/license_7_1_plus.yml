@@ -11,5 +11,5 @@
 
 - name: Verify license is provided
   fail:
-    msg: "{{ License activation failed - activate_license.stderr }}"
-  when: activate_license is success
+    msg: "{{ License activation failed }}"
+  when: activate_license is not success
