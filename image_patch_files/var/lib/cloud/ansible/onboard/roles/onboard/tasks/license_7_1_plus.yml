@@ -49,11 +49,7 @@
     (license_status.json is defined and (license_status.json.status not in ['LICENSING_COMPLETE', 'NEED_EULA_ACCEPT'])) or
     (license_uela_status.json is defined and license_uela_status.json.status != 'LICENSING_COMPLETE')
 
-- name: Put license on device
-  copy:
-    content: "{{ license_status.json.licenseText }}"
-    dest: "/config/bigip.license"
-    owner: root
-    group: root
-    mode: '0644'
+- name: Write license file to device
+  write_license_file:
+    license_text: "{{ license_status.json.licenseText }}"
   when: license_uela_status.json is defined
