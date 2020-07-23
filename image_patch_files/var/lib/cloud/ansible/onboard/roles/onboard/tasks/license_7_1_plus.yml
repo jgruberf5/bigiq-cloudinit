@@ -4,52 +4,12 @@
     msg: "You must provide a license via license_key"
   when: license_key is not defined
 
-- name: Request to license device
-  uri:
-    url: "http://localhost:8100/mgmt/setup/license/activate"
-    method: POST
-    timeout: 300
-    headers:
-      X-F5-Auth-Token: "{{ f5_auth_token }}"
-    body:
-      baseRegKey: "{{ license_key }}"
-      addOnKeys: []
-    body_format: json
-  register: license_status
+- name: Activate the license
+  shell: "/usr/local/bin/SOAPLicenseClient --basekey {{ license_key }}"
+  register: activate_license
+  when: license_key is defined
 
-- name: Stop if licensing failed
+- name: Verify license is provided
   fail:
-    msg: Failed to license the device
-  when: license_status.json.status == 'LICENSING_FAILED'
-
-- name: Send EULA if requested
-  uri:
-    url: "http://localhost:8100/mgmt/setup/license/accept-eula"
-    method: POST
-    timeout: 300
-    headers:
-      X-F5-Auth-Token: "{{ f5_auth_token }}"
-    body:
-      baseRegKey: "{{ license_key }}"
-      dossier: "{{ license_status.json.dossier }}"
-      eulaText: "{{ license_status.json.eulaText }}"
-    body_format: json
-  register: license_uela_status
-  when: license_status.json.status == 'NEED_EULA_ACCEPT'
-
-- name: Stop if EULA sending failed
-  fail:
-    msg: Failed to license the device
-  when: license_uela_status.json is defined and license_uela_status.json.status != 'LICENSING_COMPLETE'
-
-- name: Stop if license text was not generated
-  fail:
-    msg: Failed to generate license text
-  when: >
-    (license_status.json is defined and (license_status.json.status not in ['LICENSING_COMPLETE', 'NEED_EULA_ACCEPT'])) or
-    (license_uela_status.json is defined and license_uela_status.json.status != 'LICENSING_COMPLETE')
-
-- name: Write license file to device
-  write_license_file:
-    license_text: "{{ license_status.json.licenseText }}"
-  when: license_uela_status.json is defined
+    msg: "{{ License activation failed - activate_license.stderr }}"
+  when: activate_license is success
