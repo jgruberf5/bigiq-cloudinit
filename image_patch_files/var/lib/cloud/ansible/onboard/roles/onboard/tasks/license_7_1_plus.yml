@@ -50,25 +50,10 @@
     (license_uela_status.json is defined and license_uela_status.json.status != 'LICENSING_COMPLETE')
 
 - name: Put license on device
-  uri:
-    url: "http://localhost:8100/mgmt/setup/license"
-    method: POST
-    timeout: 300
-    headers:
-      X-F5-Auth-Token: "{{ f5_auth_token }}"
-    body:
-      licenseText: "{{ license_status.json.licenseText }}"
-    body_format: json
+  copy:
+    content: "{{ license_status.json.licenseText }}"
+    dest: "/config/bigip.license"
+    owner: root
+    group: root
+    mode: '0644'
   when: license_uela_status.json is defined
-
-- name: Put license on device
-  uri:
-    url: "http://localhost:8100/mgmt/setup/license"
-    method: POST
-    timeout: 300
-    headers:
-      X-F5-Auth-Token: "{{ f5_auth_token }}"
-    body:
-      licenseText: "{{ license_status.json.licenseText }}"
-    body_format: json
-  when: license_uela_status.json is undefined and license_status.json is defined
