@@ -13,3 +13,26 @@
   fail:
     msg: "{{ License activation failed }}"
   when: activate_license is not success
+
+- name: Wait for license restart (10 secs)
+  wait_for:
+    timeout: 10
+
+- name: Test mcpd state
+  shell: "/usr/bin/tmsh -a show sys mcp-state field-fmt | grep running | wc -l"
+  register: mcpd_state
+  until: int(mcpd_state.stdout) == 1
+  retries: 100
+  delay: 2
+  ignore_errors: true
+
+- name: Wait for BIG-IQ to be available
+  uri:
+    url: "https://localhost:443/info/system"
+    validate_certs: no
+  register: status
+  until: status is success and status.json.available|bool
+  retries: 60
+  delay: 10
+  
+  
