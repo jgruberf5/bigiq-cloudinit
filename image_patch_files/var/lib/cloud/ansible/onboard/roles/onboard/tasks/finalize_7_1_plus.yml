@@ -25,31 +25,6 @@
     body_format: json
   register: launch_status
 
-- name: Monitor BIGIQ Launch
-  uri:
-    url: "http://localhost:8100/mgmt/setup/launch/monitor?datetime={{ launch_status.json.fileTimestamp }}"
-    timeout: 300
-    headers:
-      X-F5-Auth-Token: "{{ f5_auth_token }}"
-  register: launch_monitor
-  until: (launch_monitor.json.status is defined) and launch_monitor.json.status in ['COMPLETE', 'ERROR']
-  retries: 20
-  delay: 60
-  when: >
-    launch_status.json.fileTimestamp is defined
-  ignore_errors: true
-
-# New BIGIQ 7.1 Onboard API restarts the device which causes connectivity problem
-# As workaround, we trigger another monitor check after BIGIQ devices become available
-- name: Validate if BIGIQ launch monitoring failed due to system restart
-  set_fact:
-    is_system_restarted: true
-  when: launch_monitor.json.status is undefined
-
-- name: BIGIQ System restart causes connectivity problems. Sleeping for 2 minutes and continue...
-  wait_for:
-    timeout: 120
-
 - name: Wait for BIG-IQ to be available
   uri:
     url: "https://localhost/info/system"
@@ -59,14 +34,5 @@
   until: >
     system_status is success and
     system_status.json.available|bool
-  retries: 30
-  delay: 30
-
-- name: Validate BIGIQ launch state.
-  fail:
-    msg: BIGIQ Launch failed
-  when: >
-    launch_monitor.json is defined and
-    launch_monitor.json.status is defined and
-    launch_monitor.json.status == 'ERROR' and
-    is_system_restarted is undefined
+  retries: 300
+  delay: 5
