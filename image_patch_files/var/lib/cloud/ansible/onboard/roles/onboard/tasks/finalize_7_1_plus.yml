@@ -27,9 +27,8 @@
 
 - name: Monitor BIGIQ Launch
   uri:
-    url: "https://{{ provider.server }}:{{ provider.server_port }}/mgmt/setup/launch/monitor?datetime={{ launch_status.json.fileTimestamp }}"
-    timeout: "{{ bigiq_onboard_timeout }}"
-    validate_certs: "{{ bigiq_onboard_validate_certs }}"
+    url: "http://localhost:8100/mgmt/setup/launch/monitor?datetime={{ launch_status.json.fileTimestamp }}"
+    timeout: 300
     headers:
       X-F5-Auth-Token: "{{ f5_auth_token }}"
   register: launch_monitor

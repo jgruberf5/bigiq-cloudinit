@@ -15,7 +15,7 @@
     headers:
       X-F5-Auth-Token: "{{ f5_auth_token }}"
     body:
-      hostname: "{{ bigiq_onboard_hostname }}"
+      hostname: "{{ ez.json.hostname }}"
       managementIpAddress: "{{ ez.json.managementIpAddress }}"
       managementRouteAddress: "{{ ez.json.managementRouteAddress }}"
       discoveryAddress: "{{ device_discovery_address }}"
