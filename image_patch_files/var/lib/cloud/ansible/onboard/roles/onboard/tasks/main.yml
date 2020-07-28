@@ -59,9 +59,3 @@
   when: (status.json["build"] is not defined)
 - include_tasks: finalize_7_1_plus.yml
   when: (status.json["build"] is defined) and authtoken is success
-
-- name: Delete TMOS user
-  shell: "/usr/bin/tmsh delete auth user onboard"
-  register: tmos_user_delete
-  when: (status.json["build"] is defined)
-  ignore_errors: true
