@@ -61,7 +61,7 @@
       X-F5-Auth-Token: "{{ f5_auth_token }}"
   register: ntp
 
-- name: Set DNS Services
+- name: Set NTP Services
   uri:
     url: "http://localhost:8100/mgmt/setup/ntp"
     method: POST
