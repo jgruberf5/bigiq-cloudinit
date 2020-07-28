@@ -15,9 +15,11 @@
     headers:
       X-F5-Auth-Token: "{{ f5_auth_token }}"
     body:
+      hostname: "{{ bigiq_onboard_hostname }}"
+      managementIpAddress: "{{ ez.json.managementIpAddress }}"
+      managementRouteAddress: "{{ ez.json.managementRouteAddress }}"
       discoveryAddress: "{{ device_discovery_address }}"
     body_format: json
-  when: ez.json.discoveryAddress != device_discovery_address
 
 - name: Check discovery address is correct
   uri:
@@ -30,3 +32,55 @@
   retries: 5
   delay: 3
   when: ez.json.discoveryAddress != device_discovery_address
+
+- name: Get DNS setting
+  uri:
+    url: "http://localhost:8100/mgmt/setup/dns"
+    timeout: 300
+    headers:
+      X-F5-Auth-Token: "{{ f5_auth_token }}"
+  register: dns
+
+- name: Set DNS Services
+  uri:
+    url: "http://localhost:8100/mgmt/setup/dns"
+    method: POST
+    timeout: 300
+    headers:
+      X-F5-Auth-Token: "{{ f5_auth_token }}"
+    body:
+      servers: "{{ dns.json.servers }}"
+      search: "{{ dns.json.search }}"
+    body_format: json
+
+- name: Get NTP setting
+  uri:
+    url: "http://localhost:8100/mgmt/setup/ntp"
+    timeout: 300
+    headers:
+      X-F5-Auth-Token: "{{ f5_auth_token }}"
+  register: ntp
+
+- name: Set DNS Services
+  uri:
+    url: "http://localhost:8100/mgmt/setup/ntp"
+    method: POST
+    timeout: 300
+    headers:
+      X-F5-Auth-Token: "{{ f5_auth_token }}"
+    body:
+      servers: "{{ ntp.json.servers }}"
+      timezone: "{{ ntp.json.timezone }}"
+    body_format: json
+
+- name: Set new root and admin password
+  uri:
+    url: "http://localhost:8100/mgmt/setup/password"
+    method: POST
+    timeout: 300
+    headers:
+      X-F5-Auth-Token: "{{ f5_auth_token }}"
+    body:
+      admin: "{{ admin_password }}"
+      root: "{{ root_password }}"
+    body_format: json
