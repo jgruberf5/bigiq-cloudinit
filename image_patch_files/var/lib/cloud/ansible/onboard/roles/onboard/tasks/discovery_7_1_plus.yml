@@ -72,15 +72,3 @@
       servers: "{{ ntp.json.servers }}"
       timezone: "{{ ntp.json.timezone }}"
     body_format: json
-
-- name: Set new root and admin password
-  uri:
-    url: "http://localhost:8100/mgmt/setup/password"
-    method: POST
-    timeout: 300
-    headers:
-      X-F5-Auth-Token: "{{ f5_auth_token }}"
-    body:
-      admin: "{{ admin_password }}"
-      root: "{{ root_password }}"
-    body_format: json
