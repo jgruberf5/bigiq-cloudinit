@@ -64,4 +64,4 @@
   shell: "/usr/bin/tmsh delete auth user onboard"
   register: tmos_user_delete
   when: (status.json["build"] is defined)
-
+  ignore_errors: true
