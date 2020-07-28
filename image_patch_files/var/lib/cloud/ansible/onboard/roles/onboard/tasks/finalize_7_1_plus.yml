@@ -1,21 +1,5 @@
 ---
-- name: Get new authentication token since BIGIQ launch takes a while
-  uri:
-    url: "http://localhost:8100/mgmt/shared/authn/login"
-    method: POST
-    timeout: 300
-    body:
-      username: onboard
-      password: "{{ onboard_password }}"
-    body_format: json
-  register: r
-
-- name: Set the token fact if authentication succeeded
-  set_fact:
-    f5_auth_token: "{{ r.json.token.token }}"
-  when: r is success
-
-- name: Launch BIGIQ
+- name: Launch BIGIQ setup process
   uri:
     url: "http://localhost:8100/mgmt/setup/launch"
     method: POST
@@ -25,7 +9,7 @@
     body_format: json
   register: launch_status
 
-- name: Monitor BIGIQ Launch
+- name: Monitor BIGIQ setup process
   uri:
     url: "http://localhost:8100/mgmt/setup/launch/monitor?datetime={{ launch_status.json.fileTimestamp }}"
     timeout: 300
@@ -33,8 +17,8 @@
       X-F5-Auth-Token: "{{ f5_auth_token }}"
   register: launch_monitor
   until: (launch_monitor.json.status is defined) and launch_monitor.json.status in ['COMPLETE', 'ERROR']
-  retries: 600
-  delay: 2
+  retries: 1200
+  delay: 1
   when: >
     launch_status.json.fileTimestamp is defined
   ignore_errors: true

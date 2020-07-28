@@ -65,4 +65,3 @@
   register: tmos_user_delete
   when: (status.json["build"] is defined)
 
-

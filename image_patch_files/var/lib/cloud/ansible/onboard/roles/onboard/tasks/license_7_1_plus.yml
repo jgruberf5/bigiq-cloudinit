@@ -19,9 +19,9 @@
     timeout: 10
 
 - name: Test mcpd state
-  shell: "/usr/bin/tmsh -a show sys mcp-state field-fmt | grep running | wc -l"
+  shell: "/usr/bin/tmsh -a show sys mcp-state field-fmt | grep running | wc -l | tr -d '\n'"
   register: mcpd_state
-  until: int(mcpd_state.stdout) == 1
+  until: mcpd_state.stdout == "1"
   retries: 100
   delay: 2
   ignore_errors: true
