@@ -15,7 +15,7 @@
     headers:
       X-F5-Auth-Token: "{{ f5_auth_token }}"
     body:
-      hostname: "{{ ez.json.hostname }}"
+      hostname: "{{ hostname }}"
       managementIpAddress: "{{ ez.json.managementIpAddress }}"
       managementRouteAddress: "{{ ez.json.managementRouteAddress }}"
       discoveryAddress: "{{ device_discovery_address }}"
@@ -39,6 +39,8 @@
     timeout: 300
     headers:
       X-F5-Auth-Token: "{{ f5_auth_token }}"
+  retries: 5
+  delay: 3
   register: dns
 
 - name: Set DNS Services
@@ -52,6 +54,9 @@
       servers: "{{ dns.json.servers }}"
       search: "{{ dns.json.search }}"
     body_format: json
+  retries: 5
+  delay: 3
+
 
 - name: Get NTP setting
   uri:
@@ -60,6 +65,9 @@
     headers:
       X-F5-Auth-Token: "{{ f5_auth_token }}"
   register: ntp
+  retries: 5
+  delay: 3
+
 
 - name: Set NTP Services
   uri:
@@ -72,3 +80,5 @@
       servers: "{{ ntp.json.servers }}"
       timezone: "{{ ntp.json.timezone }}"
     body_format: json
+  retries: 5
+  delay: 3
