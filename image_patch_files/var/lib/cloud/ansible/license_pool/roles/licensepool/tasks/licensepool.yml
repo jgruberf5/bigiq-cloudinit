@@ -41,7 +41,7 @@
   set_fact:
     license_pool_id: "{{ create_pool.json.id }}"
   when:
-    - create_pool
+    - create_pool|bool
     - license_pool_id is not defined
 
 - name: Show pool ID

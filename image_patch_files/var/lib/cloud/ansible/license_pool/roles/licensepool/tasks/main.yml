@@ -5,7 +5,7 @@
     url: "https://localhost:443/info/system"
     validate_certs: no
   register: status
-  until: status is success and status.json.available|bool
+  until: status is success and status.json.available is defined and status.json.available|bool
   retries: 60
   delay: 10
 
