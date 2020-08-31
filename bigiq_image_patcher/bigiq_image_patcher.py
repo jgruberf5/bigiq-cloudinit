@@ -33,6 +33,10 @@ import subprocess
 import guestfs
 import re
 
+from Crypto.Hash import SHA384
+from Crypto.Signature import PKCS1_v1_5
+from Crypto.PublicKey import RSA
+
 ARCHIVE_EXTS = {'.zip': 'zipfile', '.ova': 'tarfile'}
 IMAGE_TYPES = ['.qcow2', '.vhd', '.vmdk']
 
@@ -54,7 +58,8 @@ LOG.addHandler(LOGSTREAM)
 
 def patch_images(bigiq_image_dir, bigiq_cloudinit_dir, bigiq_usr_inject_dir,
                  bigiq_var_inject_dir, bigiq_config_inject_dir,
-                 bigiq_shared_inject_dir, private_pem_key_path, image_overwrite):
+                 bigiq_shared_inject_dir, private_pem_key_path,
+                 image_overwrite):
     """Patch BIGIQ classic disk image"""
     if bigiq_image_dir and os.path.exists(bigiq_image_dir):
         for disk_image in scan_for_images(bigiq_image_dir, image_overwrite):
@@ -63,7 +68,8 @@ def patch_images(bigiq_image_dir, bigiq_cloudinit_dir, bigiq_usr_inject_dir,
             if is_bigiq:
                 manifest_file_path = "%s.manifest" % disk_image
                 if os.path.exists(manifest_file_path):
-                    LOG.info('deleting previous manifest file %s', manifest_file_path)
+                    LOG.info('deleting previous manifest file %s',
+                             manifest_file_path)
                     os.unlink(manifest_file_path)
                 if usr_dev and bigiq_cloudinit_dir:
                     update_cloudinit = os.getenv('UPDATE_CLOUDINIT',
@@ -89,7 +95,8 @@ def patch_images(bigiq_image_dir, bigiq_cloudinit_dir, bigiq_usr_inject_dir,
                 try:
                     sign_image(disk_image, private_pem_key_path)
                 except Exception as ex:
-                    LOG.error("could not sign %s with private key %s: %s", disk_image, private_pem_key_path, ex)
+                    LOG.error("could not sign %s with private key %s: %s",
+                              disk_image, private_pem_key_path, ex)
     else:
         print "ERROR: BIGIQ image directory %s does not exist." % bigiq_image_dir
         print "Set environment variable BIGIQ_IMAGE_DIR or supply as the first argument to the script.\n"
@@ -230,7 +237,8 @@ def add_to_manifest(filepath, disk_image):
     manifest_file_path = "%s.manifest" % disk_image
     disk_name = os.path.basename(disk_image)
     if not os.path.exists(manifest_file_path):
-        LOG.info('creating manifest file for %s as %s', disk_name, manifest_file_path)
+        LOG.info('creating manifest file for %s as %s', disk_name,
+                 manifest_file_path)
     with open(manifest_file_path, 'a+') as mf:
         LOG.info('adding %s to %s', filepath, manifest_file_path)
         mf.write("%s\n" % filepath)
@@ -478,8 +486,10 @@ if __name__ == "__main__":
         LOG.info("Patching BIGIQ /config file system from: %s",
                  BIGIQ_CONFIG_INJECT_DIR)
     PRIVATE_KEY_PATH = None
-    if PRIVATE_PEM_KEY_FILE and os.path.exists("%s/%s" % (PRIVATE_PEM_KEY_DIR, PRIVATE_PEM_KEY_FILE)):
-        PRIVATE_KEY_PATH = "%s/%s" % (PRIVATE_PEM_KEY_DIR, PRIVATE_PEM_KEY_FILE)
+    if PRIVATE_PEM_KEY_FILE and os.path.exists(
+            "%s/%s" % (PRIVATE_PEM_KEY_DIR, PRIVATE_PEM_KEY_FILE)):
+        PRIVATE_KEY_PATH = "%s/%s" % (PRIVATE_PEM_KEY_DIR,
+                                      PRIVATE_PEM_KEY_FILE)
     if IMAGE_OVERWRITE == "1" or IMAGE_OVERWRITE.lower(
     ) == 'yes' or IMAGE_OVERWRITE.lower() == 'true':
         IMAGE_OVERWRITE = True
