@@ -28,10 +28,10 @@ locals {
 }
 
 locals {
-  admin_password = var.tmos_admin_password == "" ? random_password.password.result : var.tmos_admin_password
+  admin_password = var.bigiq_admin_password == "" ? random_password.password.result : var.bigiq_admin_password
   # set user_data YAML values or else set them to null for templating
   phone_home_url          = var.phone_home_url == "" ? "null" : var.phone_home_url
-  license_basekey         = var.license_basekey == "none" ? "null" : var.byol_license_basekey
+  license_basekey         = var.license_basekey == "none" ? "null" : var.license_basekey
 }
 
 data "template_file" "user_data" {
@@ -100,7 +100,7 @@ output "VPC" {
 }
 
 output "image_id" {
-  value = local.image_id
+  value = data.ibm_is_image.bigiq_custom_image.id
 }
 
 output "instance_id" {
