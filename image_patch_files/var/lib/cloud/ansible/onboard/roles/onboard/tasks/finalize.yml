@@ -11,3 +11,25 @@
     body:
       isSystemSetup: true
     body_format: json
+
+- name: Remove the resource warning and set UI to licensing
+  uri:
+    url: "http://localhost:8100/mgmt/shared/authz/users/admin/ui-preferences"
+    method: PUT
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+    body:
+      key: USERPREFS
+      value:
+        objectBrowserNav:
+          expandedNav:
+            devices: true
+          expandedLinks:
+            devices:
+              LICENSE MANAGEMENT: true
+        navigation_lastlayout: "/ui/devices/license-management/licenses"
+        navigation_showNavMenu: true
+        ignoredHardwareIncompatibilityDialog: true
+    body_format: json

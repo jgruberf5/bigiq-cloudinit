@@ -321,20 +321,34 @@ BIG-IQ 7.0 and above includes an installation of Ansible. This means onboarding 
 
 In the bigiq-cloudinit modules above, an embedded onboarding playbook is run to license and onboard the target BIGIQ device.
 
-In addition to the embedded onboard playbook, additional playbooks can be injected with image patching. You can do this by including them in the `image_patch_files/var/lib/cloud/ansible` directory from this repository. A sample Ansible playbook named `license_pool` is includes which will add a device RegKey license pool and populate it with RegKey license offers. 
+In addition to the embedded onboard playbook, additional playbooks can be injected with image patching. You can do this by including them in the `image_patch_files/var/lib/cloud/ansible` directory from this repository. A sample Ansible playbook named `license_regkey_pool` is includes which will add a device RegKey license pool and populate it with RegKey license offers. 
 
-The `bigiq_playbooks` cloudinit module requires your playbook to follow a naming convention. The userdata declaration for our sample `license_pool` playbook looks like the following:
+The `bigiq_playbooks` cloudinit module requires your playbook to follow a naming convention. 
+
+The userdata declaration for our sample `license_regkey_pool` playbook looks like the following:
 
 ```
 bigiq_playbooks:
   enabled: True
   playbooks:
-    - name: license_pool
+    - name: license_regkey_pool
       vars:
         license_pool_name: REGKEYPOOL
         license_offerings:
           - XINGV-LNNLH-SARPH-GCTRI-IHCGTJZ
           - JCLMK-ZDGDW-KTRGU-PAVVY-GHVOAYV
+```
+
+The userdata declaration for our sample `license_utility_pool` playbook looks like the following:
+
+```
+bigiq_playbooks:
+  enabled: True
+  playbooks:
+    - name: license_utility_pool
+      vars:
+        license_pool_name: ELAPOOL
+        utility_regkey: XINGV-LNNLH-SARPH-GCTRI-IHCGTJZ
 ```
 
 Like all bigiq-cloudinit modules, you must include the `enabled` attribute or the module will simply return without performing any action. 
@@ -351,14 +365,14 @@ From the above declaration, the `bigiq_playbooks` module will:
 
 Playbooks are run in the order defined in the `playbooks` declaration.
 
-For the above example, the `bigiq_playbooks` cloudinit module would write the `vars` attributes to the `/var/lib/cloud/ansible/license_pool/license_pool_vars.yml` file and would attempt to run the playbook found at `/var/lib/cloud/ansible/license_pool/license_pool.yml`. You must inject your playbook, via image patching, to this location or the module will not be able to find your playbook. 
+For the above example, the `bigiq_playbooks` cloudinit module would write the `vars` attributes to the `/var/lib/cloud/ansible/license_regkey_pool/license_regkey_pool_vars.yml` file and would attempt to run the playbook found at `/var/lib/cloud/ansible/license_regkey_pool/license_regkey_pool.yml`. You must inject your playbook, via image patching, to this location or the module will not be able to find your playbook. 
 
 In order for your injected playbook to read the declared `vars` correctly, your playbook would start with a task like the following:
 
 ```
 tasks:
     - include_vars:
-        file: /var/lib/cloud/ansible/license_pool/license_pool_vars.yml
+        file: /var/lib/cloud/ansible/license_regkey_pool/license_regkey_pool_vars.yml
 ```
 
 Once included, declared `vars` can be utilized throughout your playbook roles.

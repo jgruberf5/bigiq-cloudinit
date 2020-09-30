@@ -1,0 +1,9 @@
+---
+
+- hosts: localhost
+  name: BIG-IQ License Pool
+  tasks:
+    - include_vars:
+        file: /var/lib/cloud/ansible/license_utility_pool/license_utility_pool_vars.yml
+    - include_role:
+        name: licensepool

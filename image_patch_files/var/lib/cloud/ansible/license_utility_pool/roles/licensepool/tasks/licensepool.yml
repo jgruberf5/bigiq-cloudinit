@@ -1,0 +1,87 @@
+---
+
+- name: Check license pool name defined
+  fail:
+    msg: "You must provide a pool name via license_pool_name"
+  when: license_pool_name is not defined
+
+- name: List license pools
+  uri:
+    url: "http://localhost:8100/mgmt/cm/device/licensing/pool/utility/licenses"
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+    body_format: json
+  register: list_pools
+
+- name: Check pool exists
+  loop: "{{ list_pools.json['items'] }}"
+  when: item.name == license_pool_name
+  set_fact:
+    license_pool_id: "{{ item.regKey }}"
+
+- name: Create Utility license pool
+  uri:
+    url: "http://localhost:8100/mgmt/cm/device/licensing/pool/initial-activation"
+    method: POST
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+    body:
+      name: "{{ license_pool_name }}"
+      regKey: "{{ utility_regkey }}"
+      status: ACTIVATING_AUTOMATIC
+    body_format: json
+  when:
+    license_pool_id is not defined
+  register: create_pool
+
+- name: Request license status
+  uri:
+    url: "http://localhost:8100/mgmt/cm/device/licensing/pool/initial-activation/{{ utility_regkey }}"
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+  register: status
+  until: status.json.status in ['READY', 'ACTIVATING_AUTOMATIC_LICENSING_FAILED', 'ACTIVATING_AUTOMATIC_NEED_EULA_ACCEPT']
+  retries: 10
+  when:
+    create_pool is success
+
+- name: Stop if licensing failed
+  fail:
+    msg: Failed to license the device
+  when: status.json.status == 'ACTIVATING_AUTOMATIC_LICENSING_FAILED'
+
+- name: Send EULA if requested
+  uri:
+    url: "http://localhost:8100/mgmt/cm/device/licensing/pool/initial-activation/{{ utility_regkey }}"
+    method: PATCH
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+    body:
+      status: "ACTIVATING_AUTOMATIC_EULA_ACCEPTED"
+      eulaText: "{{ status.json.eulaText }}"
+    body_format: json
+  when: status.json.status == 'ACTIVATING_AUTOMATIC_NEED_EULA_ACCEPT'
+
+- name: Request license status, with EULA
+  uri:
+    url: "http://localhost:8100/mgmt/cm/device/licensing/pool/initial-activation/{{ utility_regkey }}"
+    timeout: 300
+    force_basic_auth: yes
+    url_username: admin
+    url_password: ""
+  register: status
+  until: status.json.status in ['READY', 'ACTIVATING_AUTOMATIC_EULA_ACCEPTED', 'ACTIVATING_AUTOMATIC_LICENSING_FAILED']
+  retries: 5
+
+- name: Stop if EULA sending failed
+  fail:
+    msg: Failed to license the device
+  when: status.json.status is not in ['READY', 'ACTIVATING_AUTOMATIC_EULA_ACCEPTED']
