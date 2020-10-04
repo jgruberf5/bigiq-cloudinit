@@ -1,0 +1,27 @@
+#cloud-config
+chpasswd:
+  expire: false
+  list: |
+    root:${bigiq_admin_password}
+    admin:${bigiq_admin_password}
+bigiq_dhcpv4_tmm:
+  enabled: true
+  rd_enabled: false
+  dhcp_timeout: 120
+  license_key: ${license_basekey}
+  node_type: cm
+  phone_home_url: ${phone_home_url}
+  phone_home_url_verify_tls: false
+  phone_home_url_metadata:
+    template_source: ${template_source}
+    template_version: ${template_version}
+    zone: ${zone}
+    vpc: ${vpc}
+    app_id: ${app_id}
+bigiq_playbooks:
+  enabled: True
+  playbooks:
+    - name: license_utility_pool
+      vars:
+        license_pool_name: ${license_pool_name}
+        utility_regkey: ${license_utility_regkey}

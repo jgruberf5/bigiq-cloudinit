@@ -1,14 +1,13 @@
 ---
-
 - name: Verify license_pool_id is provided
   fail:
     msg: "You must defined a license_pool_id"
   when: license_pool_id is not defined
 
 - name: Verify license offering is provided
-  fail:
-    msg: "You must provide a list of licenses to offer via license_offerings"
-  when: item is not defined
+  set_fact:
+    have_offering: yes
+  when: item is defined
 
 - name: Get RegKeys in pool
   uri:
@@ -18,10 +17,11 @@
     url_username: admin
     url_password: ""
     body_format: json
-    status_code: 
+    status_code:
       - 200
       - 404
   register: create_offering
+  when: have_offering
 
 - name: Add license to pool
   uri:
@@ -35,7 +35,9 @@
       regKey: "{{ item }}"
       status: ACTIVATING_AUTOMATIC
     body_format: json
-  when: create_offering.status == 404
+  when:
+    - have_offering
+    - create_offering.status == 404
 
 - name: Request license status
   uri:
@@ -47,11 +49,14 @@
   register: status
   until: status.json.status in ['READY', 'ACTIVATING_AUTOMATIC_LICENSING_FAILED', 'ACTIVATING_AUTOMATIC_NEED_EULA_ACCEPT']
   retries: 10
+  when: have_offering
 
 - name: Stop if licensing failed
   fail:
     msg: Failed to license the device
-  when: status.json.status == 'ACTIVATING_AUTOMATIC_LICENSING_FAILED'
+  when:
+    - have_offering
+    - status.json.status == 'ACTIVATING_AUTOMATIC_LICENSING_FAILED'
 
 - name: Send EULA if requested
   uri:
@@ -65,7 +70,9 @@
       status: "ACTIVATING_AUTOMATIC_EULA_ACCEPTED"
       eulaText: "{{ status.json.eulaText }}"
     body_format: json
-  when: status.json.status == 'ACTIVATING_AUTOMATIC_NEED_EULA_ACCEPT'
+  when:
+    - have_offering
+    - status.json.status == 'ACTIVATING_AUTOMATIC_NEED_EULA_ACCEPT'
 
 - name: Request license status, with EULA
   uri:
@@ -77,9 +84,12 @@
   register: status
   until: status.json.status in ['READY', 'ACTIVATING_AUTOMATIC_EULA_ACCEPTED', 'ACTIVATING_AUTOMATIC_LICENSING_FAILED']
   retries: 5
+  when:
+    - have_offering
 
 - name: Stop if EULA sending failed
   fail:
     msg: Failed to license the device
-  when: status.json.status is not in ['READY', 'ACTIVATING_AUTOMATIC_EULA_ACCEPTED']
-
+  when:
+    - have_offering
+    - status.json.status is not in ['READY', 'ACTIVATING_AUTOMATIC_EULA_ACCEPTED']

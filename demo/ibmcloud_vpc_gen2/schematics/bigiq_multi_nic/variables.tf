@@ -136,3 +136,90 @@ variable "app_id" {
   default     = "undefined"
   description = "The terraform application id for phone_home_url_metadata"
 }
+
+##################################################################################
+# schematic template for license pool playbooks
+##################################################################################
+variable "license_type" {
+  type        = string
+  default     = "none"
+  description = "How to license, may be 'none','bigiq_regkey','regkeypool','utilitypool'"
+}
+
+variable "license_basekey" {
+  type        = string
+  default     = "none"
+  description = "The license basekey for the BIG-IQ device"
+} 
+
+variable "license_pool_name" {
+  type        = string
+  default     = "none"
+  description = "The name of the BIG-IP license pool to create"
+} 
+
+variable "license_utility_regkey" {
+  type        = string
+  default     = "none"
+  description = "The BIG-IP utility pool regkey to create offerings to grant"
+} 
+
+variable "license_offerings_1" {
+  type        = string
+  default     = "none"
+  description = "The BIG-IP regkey pool offering key"
+}
+
+variable "license_offerings_2" {
+  type        = string
+  default     = "none"
+  description = "The BIG-IP regkey pool offering key"
+}
+
+variable "license_offerings_3" {
+  type        = string
+  default     = "none"
+  description = "The BIG-IP regkey pool offering key"
+}
+
+variable "license_offerings_4" {
+  type        = string
+  default     = "none"
+  description = "The BIG-IP regkey pool offering key"
+}
+
+variable "license_offerings_5" {
+  type        = string
+  default     = "none"
+  description = "The BIG-IP regkey pool offering key"
+}
+
+variable "license_offerings_6" {
+  type        = string
+  default     = "none"
+  description = "The BIG-IP regkey pool offering key"
+}
+
+variable "license_offerings_7" {
+  type        = string
+  default     = "none"
+  description = "The BIG-IP regkey pool offering key"
+}
+
+variable "license_offerings_8" {
+  type        = string
+  default     = "none"
+  description = "The BIG-IP regkey pool offering key"
+}
+
+variable "license_offerings_9" {
+  type        = string
+  default     = "none"
+  description = "The BIG-IP regkey pool offering key"
+}
+
+variable "license_offerings_10" {
+  type        = string
+  default     = "none"
+  description = "The BIG-IP regkey pool offering key"
+}
