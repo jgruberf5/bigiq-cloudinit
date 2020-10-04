@@ -146,23 +146,17 @@ variable "license_type" {
   description = "How to license, may be 'none','bigiq_regkey','regkeypool','utilitypool'"
 }
 
-variable "license_basekey" {
-  type        = string
-  default     = "none"
-  description = "The license basekey for the BIG-IQ device"
-} 
-
 variable "license_pool_name" {
   type        = string
   default     = "none"
   description = "The name of the BIG-IP license pool to create"
-} 
+}
 
 variable "license_utility_regkey" {
   type        = string
   default     = "none"
   description = "The BIG-IP utility pool regkey to create offerings to grant"
-} 
+}
 
 variable "license_offerings_1" {
   type        = string
