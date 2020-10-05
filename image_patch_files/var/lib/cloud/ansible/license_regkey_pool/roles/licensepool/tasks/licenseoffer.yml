@@ -4,11 +4,6 @@
     msg: "You must defined a license_pool_id"
   when: license_pool_id is not defined
 
-- name: Verify license offering is provided
-  set_fact:
-    have_offering: yes
-  when: item is defined
-
 - name: Get RegKeys in pool
   uri:
     url: "http://localhost:8100/mgmt/cm/device/licensing/pool/regkey/licenses/{{ license_pool_id }}/offerings/{{ item }}"
@@ -21,7 +16,7 @@
       - 200
       - 404
   register: create_offering
-  when: have_offering
+  when: item is not none
 
 - name: Add license to pool
   uri:
@@ -36,7 +31,7 @@
       status: ACTIVATING_AUTOMATIC
     body_format: json
   when:
-    - have_offering
+    - item is not none
     - create_offering.status == 404
 
 - name: Request license status
@@ -49,13 +44,13 @@
   register: status
   until: status.json.status in ['READY', 'ACTIVATING_AUTOMATIC_LICENSING_FAILED', 'ACTIVATING_AUTOMATIC_NEED_EULA_ACCEPT']
   retries: 10
-  when: have_offering
+  when: item is not none
 
 - name: Stop if licensing failed
   fail:
     msg: Failed to license the device
   when:
-    - have_offering
+    - item is not none
     - status.json.status == 'ACTIVATING_AUTOMATIC_LICENSING_FAILED'
 
 - name: Send EULA if requested
@@ -71,7 +66,7 @@
       eulaText: "{{ status.json.eulaText }}"
     body_format: json
   when:
-    - have_offering
+    - item is not none
     - status.json.status == 'ACTIVATING_AUTOMATIC_NEED_EULA_ACCEPT'
 
 - name: Request license status, with EULA
@@ -84,12 +79,11 @@
   register: status
   until: status.json.status in ['READY', 'ACTIVATING_AUTOMATIC_EULA_ACCEPTED', 'ACTIVATING_AUTOMATIC_LICENSING_FAILED']
   retries: 5
-  when:
-    - have_offering
+  when: item is not none
 
 - name: Stop if EULA sending failed
   fail:
     msg: Failed to license the device
   when:
-    - have_offering
+    - item is not none
     - status.json.status is not in ['READY', 'ACTIVATING_AUTOMATIC_EULA_ACCEPTED']
