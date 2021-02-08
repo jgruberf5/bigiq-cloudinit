@@ -59,10 +59,11 @@ LOG.addHandler(LOGSTREAM)
 def patch_images(bigiq_image_dir, bigiq_cloudinit_dir, bigiq_usr_inject_dir,
                  bigiq_var_inject_dir, bigiq_config_inject_dir,
                  bigiq_shared_inject_dir, private_pem_key_path,
-                 image_overwrite):
+                 image_overwrite, image_build_id):
     """Patch BIGIQ classic disk image"""
     if bigiq_image_dir and os.path.exists(bigiq_image_dir):
-        for disk_image in scan_for_images(bigiq_image_dir, image_overwrite):
+        for disk_image in scan_for_images(bigiq_image_dir, image_overwrite,
+                                          image_build_id):
             (is_bigiq, config_dev, usr_dev, var_dev, shared_dev) = \
                 validate_bigiq_device(disk_image)
             if is_bigiq:
@@ -97,13 +98,22 @@ def patch_images(bigiq_image_dir, bigiq_cloudinit_dir, bigiq_usr_inject_dir,
                 except Exception as ex:
                     LOG.error("could not sign %s with private key %s: %s",
                               disk_image, private_pem_key_path, ex)
+            if image_build_id:
+                build_split = os.path.splitext(disk_image)
+                build_name = "%s-%s%s" % (build_split[0], image_build_id, build_split[1])
+                os.rename(disk_image, build_name)
+                os.rename("%s.md5" % disk_image, "%s.md5" % build_name)
+                os.rename("%s.manifest" % disk_image, "%s.manifest" % build_name)
+                sig_file = "%s.384.sig" % disk_image
+                if os.path.exists(sig_file):
+                    os.rename(sig_file, "%s.384.sig" % build_name)
     else:
-        print "ERROR: BIGIQ image directory %s does not exist." % bigiq_image_dir
-        print "Set environment variable BIGIQ_IMAGE_DIR or supply as the first argument to the script.\n"
+        LOG.error("BIGIQ image directory %s does not exist.", bigiq_image_dir)
+        LOG.error("Set environment variable BIGIQ_IMAGE_DIR or supply as the first argument to the script.")
         sys.exit(1)
 
 
-def scan_for_images(bigiq_image_dir, image_overwrite):
+def scan_for_images(bigiq_image_dir, image_overwrite, image_build_id):
     """Scan for BIGIQ disk images"""
     return_image_files = []
     for image_file in os.listdir(bigiq_image_dir):
@@ -111,6 +121,10 @@ def scan_for_images(bigiq_image_dir, image_overwrite):
         if os.path.isfile(filepath):
             extract_dir = "%s/%s" % (bigiq_image_dir,
                                      os.path.splitext(image_file)[0])
+            if image_build_id:
+                build_split = os.path.splitext(os.path.splitext(image_file)[0])
+                extract_dir = "%s/%s-%s%s" % (bigiq_image_dir, build_split[0],
+                                              image_build_id, build_split[1])
             if os.path.exists(extract_dir):
                 found_sum_files = False
                 for existing_file in os.listdir(extract_dir):
@@ -464,6 +478,7 @@ if __name__ == "__main__":
     PRIVATE_PEM_KEY_DIR = os.getenv('PRIVATE_PEM_KEY_PATH', '/keys')
     PRIVATE_PEM_KEY_FILE = os.getenv('PRIVATE_PEM_KEY_FILE', None)
     IMAGE_OVERWRITE = os.getenv('IMAGE_OVERWRITE', '0')
+    IMAGE_BUILD_ID = os.getenv('IMAGE_BUILD_ID', None)
     if len(sys.argv) > 1:
         BIGIQ_IMAGE_DIR = sys.argv[1]
     if len(sys.argv) > 2:
@@ -498,7 +513,8 @@ if __name__ == "__main__":
         IMAGE_OVERWRITE = False
     patch_images(BIGIQ_IMAGE_DIR, BIGIQ_CLOUDINIT_DIR, BIGIQ_USR_INJECT_DIR,
                  BIGIQ_VAR_INJECT_DIR, BIGIQ_CONFIG_INJECT_DIR,
-                 BIGIQ_SHARED_INJECT_DIR, PRIVATE_KEY_PATH, IMAGE_OVERWRITE)
+                 BIGIQ_SHARED_INJECT_DIR, PRIVATE_KEY_PATH, IMAGE_OVERWRITE,
+                 IMAGE_BUILD_ID)
     STOP_TIME = time.time()
     DURATION = STOP_TIME - START_TIME
     LOG.debug(
