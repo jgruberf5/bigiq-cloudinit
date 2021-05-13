@@ -113,20 +113,25 @@ def patch_images(bigiq_image_dir, bigiq_cloudinit_dir, bigiq_usr_inject_dir,
         sys.exit(1)
 
 
-def scan_for_images(bigiq_image_dir, image_overwrite, image_build_id):
-    """Scan for BIGIQ disk images"""
+def scan_for_images(tmos_image_dir, image_overwrite, image_build_id):
+    """Scan for BIG-IQ disk images"""
     return_image_files = []
-    for image_file in os.listdir(bigiq_image_dir):
-        filepath = "%s/%s" % (bigiq_image_dir, image_file)
+    for image_file in os.listdir(tmos_image_dir):
+        filepath = "%s/%s" % (tmos_image_dir, image_file)
         if os.path.isfile(filepath):
-            extract_dir = "%s/%s" % (bigiq_image_dir,
+            extract_dir = "%s/%s" % (tmos_image_dir,
                                      os.path.splitext(image_file)[0])
             if image_build_id:
                 build_split = os.path.splitext(os.path.splitext(image_file)[0])
-                extract_dir = "%s/%s-%s%s" % (bigiq_image_dir, build_split[0],
-                                              image_build_id, build_split[1])
+                if not build_split[0].endswith(image_build_id):
+                    extract_dir = "%s/%s-%s%s" % (tmos_image_dir,
+                                                  build_split[0],
+                                                  image_build_id,
+                                                  build_split[1])
             if os.path.exists(extract_dir):
                 found_sum_files = False
+                LOG.debug('examining existing patching directory %s' %
+                          extract_dir)
                 for existing_file in os.listdir(extract_dir):
                     if os.path.splitext(existing_file)[1] == '.md5':
                         LOG.debug('found previous patching artifact file %s' %
@@ -138,6 +143,7 @@ def scan_for_images(bigiq_image_dir, image_overwrite, image_build_id):
                         % extract_dir)
                     continue
             else:
+                LOG.debug('creating patching directory %s' % extract_dir)
                 os.makedirs(extract_dir)
             arch_ext = os.path.splitext(image_file)[1]
             if arch_ext in ARCHIVE_EXTS:

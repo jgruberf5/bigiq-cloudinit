@@ -407,3 +407,5 @@ If the well-known `admin` and `root` BIG-IQ accounts do not have password sets, 
 ```
 usermod -U admin
 ```
+
+If setting passwords in user-data, the password *must not* include a single quote character.

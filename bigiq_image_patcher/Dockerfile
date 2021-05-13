@@ -32,5 +32,6 @@ ENV BIGIQ_CONFIG_INJECT_DIR '/bigiq-cloudinit/image_patch_files/config'
 ENV BIGIQ_VAR_INJECT_DIR '/bigiq-cloudinit/image_patch_files/var'
 ENV USER 'root'
 ENV UPDATE_CLOUDINIT 'true'
+ENV IMAGE_OVERWRITE = 'no'
 
 ENTRYPOINT [ "/bigiq-cloudinit/bigiq_image_patcher/bigiq_image_patcher.py" ]
