@@ -5,7 +5,7 @@
   when: license_key is not defined
 
 - name: Activate the license
-  shell: "/usr/local/bin/SOAPLicenseClient --basekey {{ license_key }}"
+  shell: "/usr/local/bin/SOAPLicenseClient --host activate.f5.com --basekey {{ license_key }}"
   register: activate_license
   when: license_key is defined
 
