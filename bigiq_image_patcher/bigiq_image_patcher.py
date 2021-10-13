@@ -333,7 +333,7 @@ def update_cloudinit_modules(bigiq_cloudinit_dir):
     start_directory = os.getcwd()
     os.chdir(bigiq_cloudinit_dir)
     gitout = subprocess.Popen("git pull", stdout=subprocess.PIPE,
-                              shell=True).communicate()[0].split('\n')
+                              shell=True, encoding='utf8').communicate()[0].split('\n')
     LOG.info('git returned: %s', gitout)
     os.chdir(start_directory)
 
