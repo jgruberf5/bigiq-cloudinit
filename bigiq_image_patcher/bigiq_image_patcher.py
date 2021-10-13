@@ -133,7 +133,7 @@ def scan_for_images(tmos_image_dir, image_overwrite, image_build_id):
                 LOG.debug('examining existing patching directory %s' %
                           extract_dir)
                 for existing_file in os.listdir(extract_dir):
-                    if os.path.splitext(existing_file)[1] == '.md5':
+                    if os.path.splitext(existing_file)[-1] == '.md5':
                         LOG.debug('found previous patching artifact file %s' %
                                   existing_file)
                         found_sum_files = True
