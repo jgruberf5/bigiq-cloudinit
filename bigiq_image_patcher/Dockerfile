@@ -30,6 +30,7 @@ VOLUME ["/BIGIQImages", "/BIGIQ_usr", "/BIGIQ_config"]
 ENV BIGIQ_IMAGE_DIR '/BIGIQImages'
 ENV BIGIQ_CONFIG_INJECT_DIR '/bigiq-cloudinit/image_patch_files/config'
 ENV BIGIQ_VAR_INJECT_DIR '/bigiq-cloudinit/image_patch_files/var'
+ENV BIQIQ_CLOUDINIT_CONFIG_TEMPLATE '/bigiq-cloudinit/image_patch_files/cloudinit_configs/disable_cloudinit/cloud-init.tmpl'
 ENV USER 'root'
 ENV UPDATE_CLOUDINIT 'true'
 ENV IMAGE_OVERWRITE = 'no'

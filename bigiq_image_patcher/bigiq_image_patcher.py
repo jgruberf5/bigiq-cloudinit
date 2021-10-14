@@ -59,7 +59,7 @@ LOG.addHandler(LOGSTREAM)
 def patch_images(bigiq_image_dir, bigiq_cloudinit_dir, bigiq_usr_inject_dir,
                  bigiq_var_inject_dir, bigiq_config_inject_dir,
                  bigiq_shared_inject_dir, private_pem_key_path,
-                 image_overwrite, image_build_id):
+                 cloud_template_file, image_overwrite, image_build_id):
     """Patch BIGIQ classic disk image"""
     if bigiq_image_dir and os.path.exists(bigiq_image_dir):
         for disk_image in scan_for_images(bigiq_image_dir, image_overwrite,
@@ -79,6 +79,11 @@ def patch_images(bigiq_image_dir, bigiq_cloudinit_dir, bigiq_usr_inject_dir,
                         update_cloudinit_modules(bigiq_cloudinit_dir)
                     inject_cloudinit_modules(disk_image, bigiq_cloudinit_dir,
                                              usr_dev)
+                if usr_dev and cloud_template_file:
+                    inject_cloudinit_config_template(disk_image,
+                                                     bigiq_cloudinit_dir,
+                                                     cloud_template_file,
+                                                     usr_dev)
                 if usr_dev and bigiq_usr_inject_dir:
                     inject_usr_files(disk_image, bigiq_usr_inject_dir, usr_dev)
                 if var_dev and bigiq_var_inject_dir:
@@ -366,6 +371,26 @@ def inject_cloudinit_modules(disk_image, bigiq_cloudinit_dir, dev):
     wait_for_gfs(gfs)
 
 
+def inject_cloudinit_config_template(disk_image, bigiq_cloudinit_dir,
+                                     cloud_template_file,dev):
+    """Inject cloudinit configuration template into BIG-IQ disk image"""
+    LOG.debug('injecting cloudinit configuration template %s' %
+              cloud_template_file)
+    gfs = guestfs.GuestFS(python_return_dict=True)
+    gfs.add_drive_opts(disk_image)
+    gfs.launch()
+    gfs.mount(dev, '/')
+    mkdir_path = '/share/defaults/config/templates'
+    dest_template_file = "%s/cloud-init.tmpl" % mkdir_path
+    gfs.mkdir_p(mkdir_path)
+    gfs.upload(cloud_template_file, dest_template_file)
+    add_to_manifest("/usr%s" % dest_template_file, disk_image)
+    gfs.sync()
+    gfs.shutdown()
+    gfs.close()
+    wait_for_gfs(gfs)
+
+
 def inject_usr_files(disk_image, usr_dir, dev):
     """Patch /usr file system of a BIGIQ disk image"""
     LOG.debug('injecting files into /usr')
@@ -485,6 +510,8 @@ if __name__ == "__main__":
     PRIVATE_PEM_KEY_FILE = os.getenv('PRIVATE_PEM_KEY_FILE', None)
     IMAGE_OVERWRITE = os.getenv('IMAGE_OVERWRITE', '0')
     IMAGE_BUILD_ID = os.getenv('IMAGE_BUILD_ID', None)
+    BIGIQ_CLOUDINIT_CONFIG_TEMPLATE = os.getenv(
+        'BIGIQ_CLOUDINIT_CONFIG_TEMPLATE', None)
     if len(sys.argv) > 1:
         BIGIQ_IMAGE_DIR = sys.argv[1]
     if len(sys.argv) > 2:
@@ -506,6 +533,9 @@ if __name__ == "__main__":
     if BIGIQ_CONFIG_INJECT_DIR:
         LOG.info("Patching BIGIQ /config file system from: %s",
                  BIGIQ_CONFIG_INJECT_DIR)
+    if BIGIQ_CONFIG_INJECT_DIR:
+        LOG.info("Patching TMOS /config file system from: %s",
+                 BIGIQ_CONFIG_INJECT_DIR)
     PRIVATE_KEY_PATH = None
     if PRIVATE_PEM_KEY_FILE and os.path.exists(
             "%s/%s" % (PRIVATE_PEM_KEY_DIR, PRIVATE_PEM_KEY_FILE)):
@@ -519,8 +549,8 @@ if __name__ == "__main__":
         IMAGE_OVERWRITE = False
     patch_images(BIGIQ_IMAGE_DIR, BIGIQ_CLOUDINIT_DIR, BIGIQ_USR_INJECT_DIR,
                  BIGIQ_VAR_INJECT_DIR, BIGIQ_CONFIG_INJECT_DIR,
-                 BIGIQ_SHARED_INJECT_DIR, PRIVATE_KEY_PATH, IMAGE_OVERWRITE,
-                 IMAGE_BUILD_ID)
+                 BIGIQ_SHARED_INJECT_DIR, PRIVATE_KEY_PATH, 
+                 BIGIQ_CLOUDINIT_CONFIG_TEMPLATE, IMAGE_OVERWRITE, IMAGE_BUILD_ID)
     STOP_TIME = time.time()
     DURATION = STOP_TIME - START_TIME
     LOG.debug(
