@@ -511,13 +511,17 @@ if __name__ == "__main__":
     IMAGE_OVERWRITE = os.getenv('IMAGE_OVERWRITE', '0')
     IMAGE_BUILD_ID = os.getenv('IMAGE_BUILD_ID', None)
     BIGIQ_CLOUDINIT_CONFIG_TEMPLATE = os.getenv(
-        'BIGIQ_CLOUDINIT_CONFIG_TEMPLATE', None)
+        'BIGIQ_CLOUDINIT_CONFIG_TEMPLATE',
+        '/bigiq-cloudinit/image_patch_files/cloudinit_configs/disable_cloudinit/cloud-init.tmpl')
     if len(sys.argv) > 1:
         BIGIQ_IMAGE_DIR = sys.argv[1]
     if len(sys.argv) > 2:
         BIGIQ_CLOUDINIT_DIR = sys.argv[2]
     if BIGIQ_IMAGE_DIR:
         LOG.info("Scanning for images in: %s", BIGIQ_IMAGE_DIR)
+    if BIGIQ_CLOUDINIT_CONFIG_TEMPLATE:
+        LOG.info("BIGIQ cloudinit template file source from: %s",
+                 BIGIQ_CLOUDINIT_CONFIG_TEMPLATE)
     if BIGIQ_CLOUDINIT_DIR:
         LOG.info("BIGIQ cloudinit modules sourced from: %s",
                  BIGIQ_CLOUDINIT_DIR)
