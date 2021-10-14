@@ -1,0 +1,114 @@
+# if you don't care about loosing your own modification, remove
+# /etc/cloud/.cloud.dat to auto-recreate this file in next boot-up
+
+# The top level settings are used as module
+# and system configuration.
+
+# A set of users which may be applied and/or used by various modules
+# when a 'default' entry is found it will reference the 'default_user'
+# from the distro configuration specified below
+users:
+    - admin
+
+# If this is set, 'root' will not be able to ssh in and they
+# will get a message to login instead as the above $user (admin)
+disable_root: false
+
+# This will cause the set+update hostname module to not operate (if true)
+preserve_hostname: true
+
+# Disable network config
+network:
+  config: disabled
+
+# Do not modify the line below (modified by vadc-init)
+# 
+# bigiq-cloudinit 
+#
+# Disabling so the same automation works
+# in BIG-IQ 7 and 8. See /config/startup.
+# When we retire BIG-IQ 7, we will rewrite
+# to align to tmos-cloudinit. 
+#
+datasource_list: [ ]
+#datasource:
+#  Ec2:
+    # metadata_urls: ['http://169.254.169.254']
+    # timeout: UNIX_CONFIG_CLOUDINIT_REPLACE_TIMEOUT
+    # max_wait: UNIX_CONFIG_CLOUDINIT_REPLACE_MAXWAIT
+#  F5Azure:
+    # lib_dir: UNIX_CONFIG_CLOUDINIT_REPLACE_F5AZURELIBDIR
+
+# The modules that run in the 'init' stage
+cloud_init_modules:
+# - migrator
+# - seed_random
+# @perl_begin
+#    print "#" if 'UNIX_CONFIG_CLOUDINIT_REPLACE_HASBOOTCMD' ne 'true';
+#    print " - bootcmd\n";
+# @perl_end
+# - write-files
+# - growpart
+# - resizefs
+# - disk_setup
+# - mounts
+# - set_hostname
+# - update_hostname
+# - update_etc_hosts
+# - ca-certs
+# - rsyslog
+# - users-groups
+# - ssh
+
+# The modules that run in the 'config' stage
+# @perl_begin
+#    print "#" if 'UNIX_CONFIG_CLOUDINIT_REPLACE_HASCONFIGMODULES' ne 'true';
+#    print "cloud_config_modules:\n";
+# @perl_end
+# - ssh-import-id
+# - locale
+# @perl_begin
+#    print "#" if 'UNIX_CONFIG_CLOUDINIT_REPLACE_HASSETPASSWORDS' ne 'true';
+#    print " - set-passwords\n";
+# @perl_end
+# - ntp
+# - timezone
+# - disable-ec2-metadata
+# @perl_begin
+#    print "#" if 'UNIX_CONFIG_CLOUDINIT_REPLACE_HASRUNCMD' ne 'true';
+#    print " - runcmd\n";
+# @perl_end
+# "tmos_declared" must be run at last since it contains time-consuming
+# wait-logic for VE resources to be ready and delay modules below it
+# @perl_begin
+#    print "#" if 'UNIX_CONFIG_CLOUDINIT_REPLACE_HASTMOSDECLARED' ne 'true';
+#    print " - tmos_declared\n";
+# @perl_end
+
+# The modules that run in the 'final' stage
+cloud_final_modules:
+# - package-update-upgrade-install
+# - puppet
+# - chef
+# - mcollective
+# - salt-minion
+# - rightscale_userdata
+# - scripts-vendor
+# - scripts-per-once
+# - scripts-per-boot
+# - scripts-per-instance
+# - scripts-user
+# - ssh-authkey-fingerprints
+# - keys-to-console
+# - phone-home
+ - final-message
+# - power-state-change
+
+# System and/or distro specific settings
+# (not accessible to handlers/transforms)
+system_info:
+   distro: centos
+   paths:
+      cloud_dir: /opt/cloud/
+      templates_dir: /etc/cloud/templates/
+   ssh_svcname: sshd
