@@ -520,7 +520,7 @@ if __name__ == "__main__":
     if BIGIQ_IMAGE_DIR:
         LOG.info("Scanning for images in: %s", BIGIQ_IMAGE_DIR)
     if BIGIQ_CLOUDINIT_CONFIG_TEMPLATE:
-        LOG.info("BIGIQ cloudinit template file source from: %s",
+        LOG.info("BIGIQ cloudinit template file sourced from: %s",
                  BIGIQ_CLOUDINIT_CONFIG_TEMPLATE)
     if BIGIQ_CLOUDINIT_DIR:
         LOG.info("BIGIQ cloudinit modules sourced from: %s",
